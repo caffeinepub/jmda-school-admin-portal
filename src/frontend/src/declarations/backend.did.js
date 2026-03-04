@@ -17,6 +17,7 @@ export const UserRole = IDL.Variant({
 });
 export const AnnouncementId = IDL.Nat;
 export const TeacherId = IDL.Nat;
+export const FeePaymentId = IDL.Nat;
 export const Time = IDL.Int;
 export const Announcement = IDL.Record({
   'id' : AnnouncementId,
@@ -31,11 +32,35 @@ export const ClassView = IDL.Record({
   'gradeLevel' : IDL.Nat,
   'teacherId' : TeacherId,
 });
+export const FeePayment = IDL.Record({
+  'id' : FeePaymentId,
+  'feesTerm' : IDL.Text,
+  'total' : IDL.Nat,
+  'studentId' : StudentId,
+  'admissionFee' : IDL.Nat,
+  'date' : IDL.Text,
+  'fine' : IDL.Nat,
+  'createdAt' : Time,
+  'transport' : IDL.Nat,
+  'deposit' : IDL.Nat,
+  'others' : IDL.Nat,
+  'discountInFee' : IDL.Nat,
+  'uniform' : IDL.Nat,
+  'books' : IDL.Nat,
+  'termlyFee' : IDL.Nat,
+  'dueableBalance' : IDL.Nat,
+  'artMaterial' : IDL.Nat,
+  'registrationFee' : IDL.Nat,
+  'previousBalance' : IDL.Nat,
+});
 export const Student = IDL.Record({
   'id' : StudentId,
   'guardianContact' : IDL.Text,
   'name' : IDL.Text,
   'gradeLevel' : IDL.Nat,
+  'registrationNo' : IDL.Text,
+  'className' : IDL.Text,
+  'guardianName' : IDL.Text,
 });
 export const Teacher = IDL.Record({
   'id' : TeacherId,
@@ -45,6 +70,7 @@ export const Teacher = IDL.Record({
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const SchoolStats = IDL.Record({
   'teacherCount' : IDL.Nat,
+  'totalFeeCollected' : IDL.Nat,
   'classCount' : IDL.Nat,
   'studentCount' : IDL.Nat,
   'announcementCount' : IDL.Nat,
@@ -57,15 +83,42 @@ export const idlService = IDL.Service({
   'claimAdmin' : IDL.Func([], [IDL.Bool], []),
   'createAnnouncement' : IDL.Func([IDL.Text, IDL.Text], [AnnouncementId], []),
   'createClass' : IDL.Func([IDL.Text, IDL.Nat, TeacherId], [ClassId], []),
-  'createStudent' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [StudentId], []),
+  'createFeePayment' : IDL.Func(
+      [
+        StudentId,
+        IDL.Text,
+        IDL.Text,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Nat,
+      ],
+      [FeePaymentId],
+      [],
+    ),
+  'createStudent' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+      [StudentId],
+      [],
+    ),
   'createTeacher' : IDL.Func([IDL.Text, IDL.Text], [TeacherId], []),
   'deleteAnnouncement' : IDL.Func([AnnouncementId], [], []),
   'deleteClass' : IDL.Func([ClassId], [], []),
+  'deleteFeePayment' : IDL.Func([FeePaymentId], [], []),
   'deleteStudent' : IDL.Func([StudentId], [], []),
   'deleteTeacher' : IDL.Func([TeacherId], [], []),
   'forceClaimAdmin' : IDL.Func([], [IDL.Bool], []),
   'getAllAnnouncements' : IDL.Func([], [IDL.Vec(Announcement)], ['query']),
   'getAllClasses' : IDL.Func([], [IDL.Vec(ClassView)], ['query']),
+  'getAllFeePayments' : IDL.Func([], [IDL.Vec(FeePayment)], ['query']),
   'getAllStudents' : IDL.Func([], [IDL.Vec(Student)], ['query']),
   'getAllTeachers' : IDL.Func([], [IDL.Vec(Teacher)], ['query']),
   'getAnnouncement' : IDL.Func(
@@ -76,6 +129,11 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getClass' : IDL.Func([ClassId], [IDL.Opt(ClassView)], ['query']),
+  'getFeePaymentsByStudent' : IDL.Func(
+      [StudentId],
+      [IDL.Vec(FeePayment)],
+      ['query'],
+    ),
   'getSchoolStats' : IDL.Func([], [SchoolStats], ['query']),
   'getStudent' : IDL.Func([StudentId], [IDL.Opt(Student)], ['query']),
   'getTeacher' : IDL.Func([TeacherId], [IDL.Opt(Teacher)], ['query']),
@@ -88,7 +146,11 @@ export const idlService = IDL.Service({
   'removeStudentFromClass' : IDL.Func([ClassId, StudentId], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'updateClass' : IDL.Func([ClassId, IDL.Text, IDL.Nat, TeacherId], [], []),
-  'updateStudent' : IDL.Func([StudentId, IDL.Text, IDL.Nat, IDL.Text], [], []),
+  'updateStudent' : IDL.Func(
+      [StudentId, IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
   'updateTeacher' : IDL.Func([TeacherId, IDL.Text, IDL.Text], [], []),
 });
 
@@ -104,6 +166,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const AnnouncementId = IDL.Nat;
   const TeacherId = IDL.Nat;
+  const FeePaymentId = IDL.Nat;
   const Time = IDL.Int;
   const Announcement = IDL.Record({
     'id' : AnnouncementId,
@@ -118,11 +181,35 @@ export const idlFactory = ({ IDL }) => {
     'gradeLevel' : IDL.Nat,
     'teacherId' : TeacherId,
   });
+  const FeePayment = IDL.Record({
+    'id' : FeePaymentId,
+    'feesTerm' : IDL.Text,
+    'total' : IDL.Nat,
+    'studentId' : StudentId,
+    'admissionFee' : IDL.Nat,
+    'date' : IDL.Text,
+    'fine' : IDL.Nat,
+    'createdAt' : Time,
+    'transport' : IDL.Nat,
+    'deposit' : IDL.Nat,
+    'others' : IDL.Nat,
+    'discountInFee' : IDL.Nat,
+    'uniform' : IDL.Nat,
+    'books' : IDL.Nat,
+    'termlyFee' : IDL.Nat,
+    'dueableBalance' : IDL.Nat,
+    'artMaterial' : IDL.Nat,
+    'registrationFee' : IDL.Nat,
+    'previousBalance' : IDL.Nat,
+  });
   const Student = IDL.Record({
     'id' : StudentId,
     'guardianContact' : IDL.Text,
     'name' : IDL.Text,
     'gradeLevel' : IDL.Nat,
+    'registrationNo' : IDL.Text,
+    'className' : IDL.Text,
+    'guardianName' : IDL.Text,
   });
   const Teacher = IDL.Record({
     'id' : TeacherId,
@@ -132,6 +219,7 @@ export const idlFactory = ({ IDL }) => {
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const SchoolStats = IDL.Record({
     'teacherCount' : IDL.Nat,
+    'totalFeeCollected' : IDL.Nat,
     'classCount' : IDL.Nat,
     'studentCount' : IDL.Nat,
     'announcementCount' : IDL.Nat,
@@ -144,15 +232,42 @@ export const idlFactory = ({ IDL }) => {
     'claimAdmin' : IDL.Func([], [IDL.Bool], []),
     'createAnnouncement' : IDL.Func([IDL.Text, IDL.Text], [AnnouncementId], []),
     'createClass' : IDL.Func([IDL.Text, IDL.Nat, TeacherId], [ClassId], []),
-    'createStudent' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [StudentId], []),
+    'createFeePayment' : IDL.Func(
+        [
+          StudentId,
+          IDL.Text,
+          IDL.Text,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Nat,
+        ],
+        [FeePaymentId],
+        [],
+      ),
+    'createStudent' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
+        [StudentId],
+        [],
+      ),
     'createTeacher' : IDL.Func([IDL.Text, IDL.Text], [TeacherId], []),
     'deleteAnnouncement' : IDL.Func([AnnouncementId], [], []),
     'deleteClass' : IDL.Func([ClassId], [], []),
+    'deleteFeePayment' : IDL.Func([FeePaymentId], [], []),
     'deleteStudent' : IDL.Func([StudentId], [], []),
     'deleteTeacher' : IDL.Func([TeacherId], [], []),
     'forceClaimAdmin' : IDL.Func([], [IDL.Bool], []),
     'getAllAnnouncements' : IDL.Func([], [IDL.Vec(Announcement)], ['query']),
     'getAllClasses' : IDL.Func([], [IDL.Vec(ClassView)], ['query']),
+    'getAllFeePayments' : IDL.Func([], [IDL.Vec(FeePayment)], ['query']),
     'getAllStudents' : IDL.Func([], [IDL.Vec(Student)], ['query']),
     'getAllTeachers' : IDL.Func([], [IDL.Vec(Teacher)], ['query']),
     'getAnnouncement' : IDL.Func(
@@ -163,6 +278,11 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getClass' : IDL.Func([ClassId], [IDL.Opt(ClassView)], ['query']),
+    'getFeePaymentsByStudent' : IDL.Func(
+        [StudentId],
+        [IDL.Vec(FeePayment)],
+        ['query'],
+      ),
     'getSchoolStats' : IDL.Func([], [SchoolStats], ['query']),
     'getStudent' : IDL.Func([StudentId], [IDL.Opt(Student)], ['query']),
     'getTeacher' : IDL.Func([TeacherId], [IDL.Opt(Teacher)], ['query']),
@@ -176,7 +296,7 @@ export const idlFactory = ({ IDL }) => {
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'updateClass' : IDL.Func([ClassId, IDL.Text, IDL.Nat, TeacherId], [], []),
     'updateStudent' : IDL.Func(
-        [StudentId, IDL.Text, IDL.Nat, IDL.Text],
+        [StudentId, IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
         [],
         [],
       ),

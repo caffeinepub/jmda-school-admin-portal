@@ -1,10 +1,20 @@
-import { GraduationCap, LayoutDashboard, Users, BookOpen, Megaphone, School, LogIn, LogOut, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  BookOpen,
+  ChevronRight,
+  DollarSign,
+  GraduationCap,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Megaphone,
+  School,
+  Users,
+} from "lucide-react";
+import type { Page } from "../App";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useIsAdmin } from "../hooks/useQueries";
-import { Badge } from "@/components/ui/badge";
-
-type Page = "dashboard" | "students" | "teachers" | "classes" | "announcements";
 
 interface SidebarProps {
   currentPage: Page;
@@ -17,6 +27,7 @@ const navItems = [
   { id: "teachers" as Page, label: "Teachers", icon: GraduationCap },
   { id: "classes" as Page, label: "Classes", icon: BookOpen },
   { id: "announcements" as Page, label: "Announcements", icon: Megaphone },
+  { id: "fees" as Page, label: "Fees Collection", icon: DollarSign },
 ];
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
@@ -36,7 +47,9 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             <h1 className="font-display text-lg font-bold text-sidebar-foreground leading-tight tracking-tight">
               JMDA
             </h1>
-            <p className="text-xs text-muted-foreground font-medium">Admin Portal</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              Admin Portal
+            </p>
           </div>
         </div>
       </div>
@@ -62,7 +75,9 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-foreground"
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground group-hover:text-sidebar-foreground"
                 }`}
               />
               <span className="flex-1 text-left">{item.label}</span>

@@ -1,16 +1,3 @@
-import { useState } from "react";
-import { Plus, Trash2, Megaphone, AlertCircle, Loader2, Calendar } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,8 +8,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertCircle,
+  Calendar,
+  Loader2,
+  Megaphone,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import type { Announcement } from "../backend.d";
 import {
   useAnnouncements,
   useCreateAnnouncement,
@@ -30,7 +38,6 @@ import {
   useIsAdmin,
 } from "../hooks/useQueries";
 import { formatNanoDate } from "../utils/formatDate";
-import type { Announcement } from "../backend.d";
 
 interface AnnouncementFormData {
   title: string;
@@ -56,8 +63,8 @@ export default function Announcements() {
   const [form, setForm] = useState<AnnouncementFormData>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const sortedAnnouncements = [...(announcements ?? [])].sort(
-    (a, b) => (b.date > a.date ? 1 : -1)
+  const sortedAnnouncements = [...(announcements ?? [])].sort((a, b) =>
+    b.date > a.date ? 1 : -1,
   );
 
   const openAdd = () => {
@@ -68,9 +75,15 @@ export default function Announcements() {
 
   const handleSubmit = async () => {
     const err = validateForm(form);
-    if (err) { setFormError(err); return; }
+    if (err) {
+      setFormError(err);
+      return;
+    }
     try {
-      await createAnnouncement.mutateAsync({ title: form.title.trim(), message: form.message.trim() });
+      await createAnnouncement.mutateAsync({
+        title: form.title.trim(),
+        message: form.message.trim(),
+      });
       toast.success("Announcement posted.");
       setFormOpen(false);
     } catch {
@@ -94,13 +107,18 @@ export default function Announcements() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 animate-fade-in">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Announcements</h1>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            Announcements
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {announcements?.length ?? 0} posted announcements
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={openAdd} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
+          <Button
+            onClick={openAdd}
+            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
             <Plus className="w-4 h-4" />
             Post Announcement
           </Button>
@@ -110,8 +128,11 @@ export default function Announcements() {
       {/* List */}
       {isLoading ? (
         <div className="space-y-3">
-          {(["sk1","sk2","sk3"]).map((sk) => (
-            <div key={sk} className="rounded-xl p-4 bg-card border border-border shadow-card">
+          {["sk1", "sk2", "sk3"].map((sk) => (
+            <div
+              key={sk}
+              className="rounded-xl p-4 bg-card border border-border shadow-card"
+            >
               <Skeleton className="h-5 w-48 mb-2" />
               <Skeleton className="h-4 w-full mb-1" />
               <Skeleton className="h-4 w-3/4 mb-3" />
@@ -124,7 +145,12 @@ export default function Announcements() {
           <Megaphone className="w-12 h-12 text-muted-foreground opacity-40 mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">No announcements yet.</p>
           {isAdmin && (
-            <Button onClick={openAdd} variant="ghost" size="sm" className="mt-3 gap-2 text-primary hover:text-primary/80">
+            <Button
+              onClick={openAdd}
+              variant="ghost"
+              size="sm"
+              className="mt-3 gap-2 text-primary hover:text-primary/80"
+            >
               <Plus className="w-3.5 h-3.5" />
               Post your first announcement
             </Button>
@@ -143,11 +169,17 @@ export default function Announcements() {
                     <Megaphone className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-display font-bold text-foreground mb-1">{ann.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{ann.message}</p>
+                    <h3 className="font-display font-bold text-foreground mb-1">
+                      {ann.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {ann.message}
+                    </p>
                     <div className="flex items-center gap-1.5 mt-3">
                       <Calendar className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">{formatNanoDate(ann.date)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatNanoDate(ann.date)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -171,7 +203,9 @@ export default function Announcements() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">Post Announcement</DialogTitle>
+            <DialogTitle className="font-display text-xl">
+              Post Announcement
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             {formError && (
@@ -185,7 +219,9 @@ export default function Announcements() {
               <Input
                 id="atitle"
                 value={form.title}
-                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, title: e.target.value }))
+                }
                 placeholder="e.g. End-of-Term Assembly Schedule"
                 className="bg-background border-border"
               />
@@ -195,7 +231,9 @@ export default function Announcements() {
               <Textarea
                 id="amessage"
                 value={form.message}
-                onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, message: e.target.value }))
+                }
                 placeholder="Write your announcement here..."
                 className="bg-background border-border min-h-[100px] resize-none"
                 rows={4}
@@ -203,11 +241,21 @@ export default function Announcements() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setFormOpen(false)} disabled={createAnnouncement.isPending}>
+            <Button
+              variant="ghost"
+              onClick={() => setFormOpen(false)}
+              disabled={createAnnouncement.isPending}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={createAnnouncement.isPending} className="bg-primary text-primary-foreground">
-              {createAnnouncement.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            <Button
+              onClick={handleSubmit}
+              disabled={createAnnouncement.isPending}
+              className="bg-primary text-primary-foreground"
+            >
+              {createAnnouncement.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Post Announcement
             </Button>
           </DialogFooter>
@@ -215,21 +263,36 @@ export default function Announcements() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Delete Announcement?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display">
+              Delete Announcement?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove the announcement <strong className="text-foreground">"{deleteTarget?.title}"</strong>.
+              This will permanently remove the announcement{" "}
+              <strong className="text-foreground">
+                "{deleteTarget?.title}"
+              </strong>
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-border">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              {deleteAnnouncement.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
+              {deleteAnnouncement.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

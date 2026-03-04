@@ -1,11 +1,12 @@
 import Map "mo:core/Map";
 import Set "mo:core/Set";
 import Array "mo:core/Array";
-import Iter "mo:core/Iter";
 import Time "mo:core/Time";
+import Nat "mo:core/Nat";
+import Principal "mo:core/Principal";
+import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
-import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
@@ -15,12 +16,16 @@ actor {
   public type TeacherId = Nat;
   public type ClassId = Nat;
   public type AnnouncementId = Nat;
+  public type FeePaymentId = Nat;
 
   public type Student = {
     id : StudentId;
+    registrationNo : Text;
     name : Text;
     gradeLevel : Nat;
     guardianContact : Text;
+    guardianName : Text;
+    className : Text;
   };
 
   public type Teacher = {
@@ -62,11 +67,34 @@ actor {
     date : Time.Time;
   };
 
+  public type FeePayment = {
+    id : FeePaymentId;
+    studentId : StudentId;
+    feesTerm : Text;
+    date : Text;
+    termlyFee : Nat;
+    admissionFee : Nat;
+    registrationFee : Nat;
+    artMaterial : Nat;
+    transport : Nat;
+    books : Nat;
+    uniform : Nat;
+    fine : Nat;
+    others : Nat;
+    previousBalance : Nat;
+    discountInFee : Nat;
+    total : Nat;
+    deposit : Nat;
+    dueableBalance : Nat;
+    createdAt : Time.Time;
+  };
+
   public type SchoolStats = {
     studentCount : Nat;
     teacherCount : Nat;
     classCount : Nat;
     announcementCount : Nat;
+    totalFeeCollected : Nat;
   };
 
   public type UserProfile = {
@@ -78,25 +106,24 @@ actor {
   var teacherIdCounter = 0;
   var classIdCounter = 0;
   var announcementIdCounter = 0;
+  var feePaymentIdCounter = 0;
 
   let students = Map.empty<StudentId, Student>();
   let teachers = Map.empty<TeacherId, Teacher>();
   let classes = Map.empty<ClassId, Class>();
   let announcements = Map.empty<AnnouncementId, Announcement>();
+  let feePayments = Map.empty<FeePaymentId, FeePayment>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
-  // Access control
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   // Claim Admin logic
   public shared ({ caller }) func claimAdmin() : async Bool {
-    // Check if caller is anonymous
     if (caller.isAnonymous()) {
       return false;
     };
 
-    // Check if any admin exists by scanning userRoles map
     let hasAdmin = accessControlState.userRoles.values().any(
       func(role) { role == #admin }
     );
@@ -105,23 +132,16 @@ actor {
       return false;
     };
 
-    // Directly add caller to userRoles map as admin
     accessControlState.userRoles.add(caller, #admin);
 
     true;
   };
 
-  // SECURITY CRITICAL: This function allows ANY non-anonymous user to become admin
-  // This is a severe security vulnerability but implemented as requested
-  // WARNING: This function should be removed or heavily restricted in production
   public shared ({ caller }) func forceClaimAdmin() : async Bool {
-    // Check if caller is anonymous
     if (caller.isAnonymous()) {
       return false;
     };
 
-    // SECURITY ISSUE: No authorization check here means anyone can take over
-    // Clear all user roles and set caller as only admin
     accessControlState.userRoles.clear();
     accessControlState.userRoles.add(caller, #admin);
 
@@ -151,7 +171,14 @@ actor {
   };
 
   // Student CRUD
-  public shared ({ caller }) func createStudent(name : Text, gradeLevel : Nat, guardianContact : Text) : async StudentId {
+  public shared ({ caller }) func createStudent(
+    registrationNo : Text,
+    name : Text,
+    gradeLevel : Nat,
+    guardianContact : Text,
+    guardianName : Text,
+    className : Text,
+  ) : async StudentId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can create students");
     };
@@ -160,9 +187,12 @@ actor {
 
     let student : Student = {
       id;
+      registrationNo;
       name;
       gradeLevel;
       guardianContact;
+      guardianName;
+      className;
     };
     students.add(id, student);
     id;
@@ -172,7 +202,15 @@ actor {
     students.get(id);
   };
 
-  public shared ({ caller }) func updateStudent(id : StudentId, name : Text, gradeLevel : Nat, guardianContact : Text) : async () {
+  public shared ({ caller }) func updateStudent(
+    id : StudentId,
+    registrationNo : Text,
+    name : Text,
+    gradeLevel : Nat,
+    guardianContact : Text,
+    guardianName : Text,
+    className : Text,
+  ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update students");
     };
@@ -181,9 +219,12 @@ actor {
       case (?student) {
         let updatedStudent : Student = {
           student with
+          registrationNo;
           name;
           gradeLevel;
           guardianContact;
+          guardianName;
+          className;
         };
         students.add(id, updatedStudent);
       };
@@ -389,18 +430,114 @@ actor {
     announcements.remove(id);
   };
 
+  // Fee Payments CRUD
+  public shared ({ caller }) func createFeePayment(
+    studentId : StudentId,
+    feesTerm : Text,
+    date : Text,
+    termlyFee : Nat,
+    admissionFee : Nat,
+    registrationFee : Nat,
+    artMaterial : Nat,
+    transport : Nat,
+    books : Nat,
+    uniform : Nat,
+    fine : Nat,
+    others : Nat,
+    previousBalance : Nat,
+    discountInFee : Nat,
+    deposit : Nat,
+  ) : async FeePaymentId {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can create fee payments");
+    };
+    if (not students.containsKey(studentId)) {
+      Runtime.trap("Student not found");
+    };
+
+    let id = feePaymentIdCounter;
+    feePaymentIdCounter += 1;
+
+    let total = termlyFee + admissionFee + registrationFee + artMaterial + transport + books + uniform + fine + others;
+    let newTotal = if (total < discountInFee) { 0 } else {
+      total - discountInFee;
+    };
+    let dueableBalance : Nat = if (newTotal + previousBalance < deposit) {
+      0;
+    } else { (newTotal + previousBalance) - deposit };
+
+    let feePayment : FeePayment = {
+      id;
+      studentId;
+      feesTerm;
+      date;
+      termlyFee;
+      admissionFee;
+      registrationFee;
+      artMaterial;
+      transport;
+      books;
+      uniform;
+      fine;
+      others;
+      previousBalance;
+      discountInFee;
+      total = newTotal;
+      deposit;
+      dueableBalance;
+      createdAt = Time.now();
+    };
+    feePayments.add(id, feePayment);
+    id;
+  };
+
+  public query ({ caller }) func getFeePaymentsByStudent(studentId : StudentId) : async [FeePayment] {
+    // Admin required.
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Only admins can fetch student fee payments");
+    };
+    feePayments.values().toArray().filter(
+      func(fp) { fp.studentId == studentId }
+    );
+  };
+
+  public query ({ caller }) func getAllFeePayments() : async [FeePayment] {
+    // Admin required.
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Only admins can fetch all fee payments");
+    };
+    feePayments.values().toArray();
+  };
+
+  public shared ({ caller }) func deleteFeePayment(id : FeePaymentId) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can delete fee payments");
+    };
+    if (not feePayments.containsKey(id)) {
+      Runtime.trap("Fee payment not found");
+    };
+    feePayments.remove(id);
+  };
+
   // Dashboard stats
   public query ({ caller }) func getSchoolStats() : async SchoolStats {
+    // No access check needed -- public read
     let studentCount = students.size();
     let teacherCount = teachers.size();
     let classCount = classes.size();
     let announcementCount = announcements.size();
+
+    var totalFeeCollected = 0;
+    for (fp in feePayments.values()) {
+      totalFeeCollected += fp.deposit;
+    };
 
     {
       studentCount;
       teacherCount;
       classCount;
       announcementCount;
+      totalFeeCollected;
     };
   };
 };

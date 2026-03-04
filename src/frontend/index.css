@@ -170,3 +170,37 @@
     border-radius: 99px;
   }
 }
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .print-area {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+
+  /* Reset dark theme for print */
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 4pt 8pt !important;
+  }
+}

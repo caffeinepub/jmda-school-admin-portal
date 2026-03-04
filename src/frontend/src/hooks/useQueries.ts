@@ -1,13 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useActor } from "./useActor";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  Announcement,
+  ClassView,
+  FeePayment,
+  SchoolStats,
   Student,
   Teacher,
-  ClassView,
-  Announcement,
-  SchoolStats,
 } from "../backend.d";
 import { UserRole } from "../backend.d";
+import { useActor } from "./useActor";
 
 // ── Query Keys ──────────────────────────────────────────────────────────────
 export const QUERY_KEYS = {
@@ -18,6 +19,9 @@ export const QUERY_KEYS = {
   stats: ["stats"] as const,
   role: ["role"] as const,
   isAdmin: ["isAdmin"] as const,
+  feePayments: ["feePayments"] as const,
+  feePaymentsByStudent: (id: bigint) =>
+    ["feePayments", "student", id.toString()] as const,
 };
 
 // ── Read Queries ─────────────────────────────────────────────────────────────
@@ -113,6 +117,32 @@ export function useCallerRole() {
   });
 }
 
+export function useFeePayments() {
+  const { actor, isFetching } = useActor();
+  return useQuery<FeePayment[]>({
+    queryKey: QUERY_KEYS.feePayments,
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllFeePayments();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useFeePaymentsByStudent(studentId: bigint | null) {
+  const { actor, isFetching } = useActor();
+  return useQuery<FeePayment[]>({
+    queryKey: studentId
+      ? QUERY_KEYS.feePaymentsByStudent(studentId)
+      : ["feePayments", "student", "none"],
+    queryFn: async () => {
+      if (!actor || !studentId) return [];
+      return actor.getFeePaymentsByStudent(studentId);
+    },
+    enabled: !!actor && !isFetching && !!studentId,
+  });
+}
+
 // ── Admin Claim Mutations ─────────────────────────────────────────────────────
 export function useClaimAdmin() {
   const { actor } = useActor();
@@ -150,12 +180,22 @@ export function useCreateStudent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: {
+      registrationNo: string;
       name: string;
       gradeLevel: bigint;
       guardianContact: string;
+      guardianName: string;
+      className: string;
     }) => {
       if (!actor) throw new Error("No actor");
-      return actor.createStudent(data.name, data.gradeLevel, data.guardianContact);
+      return actor.createStudent(
+        data.registrationNo,
+        data.name,
+        data.gradeLevel,
+        data.guardianContact,
+        data.guardianName,
+        data.className,
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.students });
@@ -170,12 +210,23 @@ export function useUpdateStudent() {
   return useMutation({
     mutationFn: async (data: {
       id: bigint;
+      registrationNo: string;
       name: string;
       gradeLevel: bigint;
       guardianContact: string;
+      guardianName: string;
+      className: string;
     }) => {
       if (!actor) throw new Error("No actor");
-      return actor.updateStudent(data.id, data.name, data.gradeLevel, data.guardianContact);
+      return actor.updateStudent(
+        data.id,
+        data.registrationNo,
+        data.name,
+        data.gradeLevel,
+        data.guardianContact,
+        data.guardianName,
+        data.className,
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.students });
@@ -218,7 +269,11 @@ export function useUpdateTeacher() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { id: bigint; name: string; department: string }) => {
+    mutationFn: async (data: {
+      id: bigint;
+      name: string;
+      department: string;
+    }) => {
       if (!actor) throw new Error("No actor");
       return actor.updateTeacher(data.id, data.name, data.department);
     },
@@ -275,7 +330,12 @@ export function useUpdateClass() {
       teacherId: bigint;
     }) => {
       if (!actor) throw new Error("No actor");
-      return actor.updateClass(data.id, data.name, data.gradeLevel, data.teacherId);
+      return actor.updateClass(
+        data.id,
+        data.name,
+        data.gradeLevel,
+        data.teacherId,
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.classes });
@@ -352,6 +412,69 @@ export function useDeleteAnnouncement() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.announcements });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.stats });
+    },
+  });
+}
+
+// ── Fee Payment Mutations ─────────────────────────────────────────────────────
+export function useCreateFeePayment() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      studentId: bigint;
+      feesTerm: string;
+      date: string;
+      termlyFee: bigint;
+      admissionFee: bigint;
+      registrationFee: bigint;
+      artMaterial: bigint;
+      transport: bigint;
+      books: bigint;
+      uniform: bigint;
+      fine: bigint;
+      others: bigint;
+      previousBalance: bigint;
+      discountInFee: bigint;
+      deposit: bigint;
+    }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.createFeePayment(
+        data.studentId,
+        data.feesTerm,
+        data.date,
+        data.termlyFee,
+        data.admissionFee,
+        data.registrationFee,
+        data.artMaterial,
+        data.transport,
+        data.books,
+        data.uniform,
+        data.fine,
+        data.others,
+        data.previousBalance,
+        data.discountInFee,
+        data.deposit,
+      );
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.feePayments });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.stats });
+    },
+  });
+}
+
+export function useDeleteFeePayment() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: bigint) => {
+      if (!actor) throw new Error("No actor");
+      return actor.deleteFeePayment(id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.feePayments });
       qc.invalidateQueries({ queryKey: QUERY_KEYS.stats });
     },
   });

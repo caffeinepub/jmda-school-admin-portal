@@ -1,40 +1,590 @@
-import { useState } from "react";
-import { Toaster } from "@/components/ui/sonner";
-import Sidebar from "./components/Sidebar";
-import Dashboard from "./components/Dashboard";
-import Students from "./components/Students";
-import Teachers from "./components/Teachers";
-import Classes from "./components/Classes";
-import Announcements from "./components/Announcements";
-import { Menu, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Toaster } from "@/components/ui/sonner";
+import {
+  AlertCircle,
+  BarChart2,
+  BookOpen,
+  BookText,
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Printer,
+  Receipt,
+  Settings,
+  Star,
+  Trash2,
+  UserSquare,
+  Users,
+  Video,
+  Wallet,
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import { useInternetIdentity } from "./hooks/useInternetIdentity";
+import { useIsAdmin } from "./hooks/useQueries";
 
-type Page = "dashboard" | "students" | "teachers" | "classes" | "announcements";
+import ActiveInactivePage from "./components/pages/ActiveInactivePage";
+import AddStudentPage from "./components/pages/AddStudentPage";
+import AdmissionLetterPage from "./components/pages/AdmissionLetterPage";
+import AttendancePage from "./components/pages/AttendancePage";
+import ClassesPage from "./components/pages/ClassesPage";
+import ComingSoonPage from "./components/pages/ComingSoonPage";
+// Pages
+import DashboardPage from "./components/pages/DashboardPage";
+import EmployeesPage from "./components/pages/EmployeesPage";
+import ExamsPage from "./components/pages/ExamsPage";
+import FamiliesPage from "./components/pages/FamiliesPage";
+import FeeHistoryPage from "./components/pages/FeeHistoryPage";
+import FeesCollectPage from "./components/pages/FeesCollectPage";
+import FeesDefaultersPage from "./components/pages/FeesDefaultersPage";
+import FeesDeletePage from "./components/pages/FeesDeletePage";
+import FeesInvoicePage from "./components/pages/FeesInvoicePage";
+import FeesPaidSlipPage from "./components/pages/FeesPaidSlipPage";
+import FeesReportPage from "./components/pages/FeesReportPage";
+import HomeworkPage from "./components/pages/HomeworkPage";
+import PromoteStudentsPage from "./components/pages/PromoteStudentsPage";
+import ReportsPage from "./components/pages/ReportsPage";
+import SalaryPage from "./components/pages/SalaryPage";
+import StudentIdCardsPage from "./components/pages/StudentIdCardsPage";
+import StudentsPage from "./components/pages/StudentsPage";
+import SubjectsPage from "./components/pages/SubjectsPage";
+import TeachersPage from "./components/pages/TeachersPage";
+import TimetablePage from "./components/pages/TimetablePage";
+
+// ── Page types ───────────────────────────────────────────────────────────────
+
+export type Page =
+  | "dashboard"
+  | "general-settings"
+  | "classes"
+  | "subjects"
+  | "students"
+  | "add-student"
+  | "edit-student"
+  | "families"
+  | "active-inactive"
+  | "admission-letter"
+  | "id-cards"
+  | "print-list"
+  | "promote-students"
+  | "teachers"
+  | "employees"
+  | "accounts"
+  | "fees-invoice"
+  | "fees-collect"
+  | "fees-paid-slip"
+  | "fees-defaulters"
+  | "fees-report"
+  | "fees-delete"
+  | "fee-history"
+  | "salary"
+  | "attendance"
+  | "timetable"
+  | "homework"
+  | "behaviour"
+  | "store"
+  | "whatsapp"
+  | "messaging"
+  | "sms"
+  | "live-class"
+  | "question-paper"
+  | "exams"
+  | "class-tests"
+  | "reports"
+  | "certificates";
 
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
-  students: "Students",
-  teachers: "Teachers",
+  "general-settings": "General Settings",
   classes: "Classes",
-  announcements: "Announcements",
+  subjects: "Subjects",
+  students: "All Students",
+  "add-student": "Add Student",
+  "edit-student": "Edit Student",
+  families: "Manage Families",
+  "active-inactive": "Active / Inactive",
+  "admission-letter": "Admission Letter",
+  "id-cards": "Student ID Cards",
+  "print-list": "Print Basic List",
+  "promote-students": "Promote Students",
+  teachers: "Teachers",
+  employees: "Employees",
+  accounts: "Accounts",
+  "fees-invoice": "Generate Fees Invoice",
+  "fees-collect": "Collect Fees",
+  "fees-paid-slip": "Fees Paid Slip",
+  "fees-defaulters": "Fees Defaulters",
+  "fees-report": "Fees Report",
+  "fees-delete": "Delete Fees",
+  "fee-history": "Fee History",
+  salary: "Salary",
+  attendance: "Attendance",
+  timetable: "Timetable",
+  homework: "Homework",
+  behaviour: "Behaviour & Skills",
+  store: "Online Store & POS",
+  whatsapp: "WhatsApp",
+  messaging: "Messaging",
+  sms: "SMS Services",
+  "live-class": "Live Class",
+  "question-paper": "Question Paper",
+  exams: "Exams",
+  "class-tests": "Class Tests",
+  reports: "Reports",
+  certificates: "Certificates",
 };
 
-function PageContent({ page }: { page: Page }) {
-  const pages: Record<Page, React.ReactNode> = {
-    dashboard: <Dashboard />,
-    students: <Students />,
-    teachers: <Teachers />,
-    classes: <Classes />,
-    announcements: <Announcements />,
-  };
-  return <>{pages[page]}</>;
+// ── Nav items ────────────────────────────────────────────────────────────────
+
+interface NavItem {
+  page?: Page;
+  label: string;
+  icon: React.ElementType;
+  children?: NavItem[];
+  comingSoon?: boolean;
 }
+
+const NAV_ITEMS: NavItem[] = [
+  { page: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  {
+    page: "general-settings",
+    label: "General Settings",
+    icon: Settings,
+    comingSoon: true,
+  },
+  { page: "classes", label: "Classes", icon: BookOpen },
+  { page: "subjects", label: "Subjects", icon: BookText },
+  {
+    label: "Students",
+    icon: GraduationCap,
+    children: [
+      { page: "students", label: "All Students", icon: Users },
+      { page: "add-student", label: "Add New", icon: GraduationCap },
+      { page: "families", label: "Manage Families", icon: Building2 },
+      { page: "active-inactive", label: "Active / Inactive", icon: UserSquare },
+      { page: "admission-letter", label: "Admission Letter", icon: FileText },
+      { page: "id-cards", label: "Student ID Cards", icon: UserSquare },
+      {
+        page: "print-list",
+        label: "Print Basic List",
+        icon: Printer,
+        comingSoon: true,
+      },
+      {
+        page: "promote-students",
+        label: "Promote Students",
+        icon: ChevronRight,
+      },
+    ],
+  },
+  { page: "teachers", label: "Teachers", icon: UserSquare },
+  { page: "employees", label: "Employees", icon: Users },
+  { page: "accounts", label: "Accounts", icon: Wallet, comingSoon: true },
+  {
+    label: "Fees",
+    icon: Wallet,
+    children: [
+      { page: "fees-invoice", label: "Generate Fees Invoice", icon: FileText },
+      { page: "fees-collect", label: "Collect Fees", icon: Wallet },
+      { page: "fees-paid-slip", label: "Fees Paid Slip", icon: Receipt },
+      { page: "fees-defaulters", label: "Fees Defaulters", icon: AlertCircle },
+      { page: "fees-report", label: "Fees Report", icon: BarChart2 },
+      { page: "fees-delete", label: "Delete Fees", icon: Trash2 },
+    ],
+  },
+  { page: "salary", label: "Salary", icon: Wallet },
+  { page: "attendance", label: "Attendance", icon: ClipboardList },
+  { page: "timetable", label: "Timetable", icon: ClipboardList },
+  { page: "homework", label: "Homework", icon: BookOpen },
+  {
+    page: "behaviour",
+    label: "Behaviour & Skills",
+    icon: Star,
+    comingSoon: true,
+  },
+  {
+    page: "store",
+    label: "Online Store & POS",
+    icon: Building2,
+    comingSoon: true,
+  },
+  {
+    page: "whatsapp",
+    label: "WhatsApp",
+    icon: MessageSquare,
+    comingSoon: true,
+  },
+  {
+    page: "messaging",
+    label: "Messaging",
+    icon: MessageSquare,
+    comingSoon: true,
+  },
+  { page: "sms", label: "SMS Services", icon: MessageSquare, comingSoon: true },
+  { page: "live-class", label: "Live Class", icon: Video, comingSoon: true },
+  {
+    page: "question-paper",
+    label: "Question Paper",
+    icon: FileText,
+    comingSoon: true,
+  },
+  { page: "exams", label: "Exams", icon: FileText },
+  { page: "class-tests", label: "Class Tests", icon: ClipboardList },
+  { page: "reports", label: "Reports", icon: FileText },
+  { page: "certificates", label: "Certificates", icon: Star, comingSoon: true },
+];
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+
+interface SidebarProps {
+  currentPage: Page;
+  onNavigate: (page: Page) => void;
+}
+
+function NavItemComponent({
+  item,
+  currentPage,
+  onNavigate,
+  depth = 0,
+}: {
+  item: NavItem;
+  currentPage: Page;
+  onNavigate: (page: Page) => void;
+  depth?: number;
+}) {
+  const [expanded, setExpanded] = useState(() => {
+    if (!item.children) return false;
+    return item.children.some(
+      (c) =>
+        c.page === currentPage ||
+        c.children?.some((cc) => cc.page === currentPage),
+    );
+  });
+
+  const isActive = item.page === currentPage;
+  const hasActiveChild = item.children?.some((c) => c.page === currentPage);
+
+  if (item.children) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+            hasActiveChild
+              ? "bg-primary/10 text-primary"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          }`}
+          style={{ paddingLeft: `${(depth + 1) * 12}px` }}
+        >
+          <item.icon className="w-4 h-4 shrink-0" />
+          <span className="flex-1 text-left font-medium">{item.label}</span>
+          {expanded ? (
+            <ChevronDown className="w-3 h-3" />
+          ) : (
+            <ChevronRight className="w-3 h-3" />
+          )}
+        </button>
+        {expanded && (
+          <div className="ml-3 border-l border-sidebar-border pl-2 mt-0.5 space-y-0.5">
+            {item.children.map((child, i) => (
+              <NavItemComponent
+                key={child.page ?? i}
+                item={child}
+                currentPage={currentPage}
+                onNavigate={onNavigate}
+                depth={depth + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (!item.page) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onNavigate(item.page!)}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+        isActive
+          ? "nav-item-active text-primary font-semibold"
+          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      }`}
+      style={{ paddingLeft: depth > 0 ? `${(depth + 1) * 10}px` : undefined }}
+      data-ocid={`sidebar.nav_link.${item.page}`}
+    >
+      <item.icon className="w-4 h-4 shrink-0" />
+      <span className="flex-1 text-left">{item.label}</span>
+      {item.comingSoon && (
+        <Badge className="text-[9px] py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/30">
+          Soon
+        </Badge>
+      )}
+    </button>
+  );
+}
+
+function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
+  const { identity, login, clear, isLoggingIn } = useInternetIdentity();
+  const { data: isAdmin } = useIsAdmin();
+
+  return (
+    <aside className="w-64 h-full bg-sidebar sidebar-glow flex flex-col">
+      {/* Logo */}
+      <div className="px-4 py-4 border-b border-sidebar-border">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <GraduationCap className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <div>
+            <p className="text-sm font-display font-bold text-sidebar-foreground">
+              JMDA
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              School Admin Portal
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <ScrollArea className="flex-1 py-2 scrollbar-thin">
+        <nav className="px-2 space-y-0.5">
+          {NAV_ITEMS.map((item, i) => (
+            <NavItemComponent
+              key={item.page ?? `group-${i}`}
+              item={item}
+              currentPage={currentPage}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </nav>
+      </ScrollArea>
+
+      {/* User */}
+      <div className="border-t border-sidebar-border p-3">
+        {identity ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-2">
+              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+                <UserSquare className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-sidebar-foreground truncate">
+                  {identity.getPrincipal().toString().slice(0, 14)}...
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {isAdmin ? "Administrator" : "Viewer"}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={clear}
+              data-ocid="sidebar.button"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="default"
+            size="sm"
+            className="w-full gap-2 text-xs"
+            onClick={login}
+            disabled={isLoggingIn}
+            data-ocid="sidebar.button"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            {isLoggingIn ? "Signing in..." : "Sign In"}
+          </Button>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+// ── Page Content ─────────────────────────────────────────────────────────────
+
+interface PageNavProps {
+  onNavigate: (page: Page, params?: Record<string, string>) => void;
+  editStudentId?: string;
+}
+
+function PageContent({
+  page,
+  onNavigate,
+  editStudentId,
+}: { page: Page } & PageNavProps) {
+  switch (page) {
+    case "dashboard":
+      return <DashboardPage onNavigate={(p) => onNavigate(p)} />;
+    case "students":
+      return <StudentsPage onNavigate={onNavigate} />;
+    case "add-student":
+      return <AddStudentPage onNavigate={(p) => onNavigate(p)} />;
+    case "edit-student":
+      return (
+        <AddStudentPage
+          onNavigate={(p) => onNavigate(p)}
+          editId={editStudentId}
+        />
+      );
+    case "families":
+      return <FamiliesPage />;
+    case "active-inactive":
+      return <ActiveInactivePage />;
+    case "admission-letter":
+      return <AdmissionLetterPage />;
+    case "id-cards":
+      return <StudentIdCardsPage />;
+    case "promote-students":
+      return <PromoteStudentsPage />;
+    case "teachers":
+      return <TeachersPage />;
+    case "classes":
+      return <ClassesPage />;
+    case "subjects":
+      return <SubjectsPage />;
+    case "employees":
+      return <EmployeesPage />;
+    case "fees-invoice":
+      return <FeesInvoicePage />;
+    case "fees-collect":
+      return <FeesCollectPage />;
+    case "fees-paid-slip":
+      return <FeesPaidSlipPage />;
+    case "fees-defaulters":
+      return <FeesDefaultersPage />;
+    case "fees-report":
+      return <FeesReportPage />;
+    case "fees-delete":
+      return <FeesDeletePage />;
+    case "fee-history":
+      return <FeeHistoryPage />;
+    case "salary":
+      return <SalaryPage />;
+    case "attendance":
+      return <AttendancePage />;
+    case "timetable":
+      return <TimetablePage />;
+    case "homework":
+      return <HomeworkPage />;
+    case "exams":
+      return <ExamsPage />;
+    case "class-tests":
+      return <ExamsPage />;
+    case "reports":
+      return <ReportsPage />;
+    case "general-settings":
+      return (
+        <ComingSoonPage
+          title="General Settings"
+          description="Configure school name, logo, academic year, and other general settings."
+        />
+      );
+    case "accounts":
+      return (
+        <ComingSoonPage
+          title="Accounts"
+          description="Manage income, expenses, and financial accounts."
+        />
+      );
+    case "behaviour":
+      return (
+        <ComingSoonPage
+          title="Behaviour & Skills"
+          description="Track student behaviour and co-curricular skills."
+        />
+      );
+    case "store":
+      return (
+        <ComingSoonPage
+          title="Online Store & POS"
+          description="Sell books, uniforms and materials online."
+        />
+      );
+    case "whatsapp":
+      return (
+        <ComingSoonPage
+          title="WhatsApp"
+          description="Send WhatsApp messages to parents and students."
+        />
+      );
+    case "messaging":
+      return (
+        <ComingSoonPage
+          title="Messaging"
+          description="Internal messaging between staff members."
+        />
+      );
+    case "sms":
+      return (
+        <ComingSoonPage
+          title="SMS Services"
+          description="Send SMS notifications to parents."
+        />
+      );
+    case "live-class":
+      return (
+        <ComingSoonPage
+          title="Live Class"
+          description="Conduct online live classes for students."
+        />
+      );
+    case "question-paper":
+      return (
+        <ComingSoonPage
+          title="Question Paper"
+          description="Create and manage question papers for exams."
+        />
+      );
+    case "certificates":
+      return (
+        <ComingSoonPage
+          title="Certificates"
+          description="Generate and print student certificates."
+        />
+      );
+    case "print-list":
+      return (
+        <ComingSoonPage
+          title="Print Basic List"
+          description="Print a basic list of all students."
+        />
+      );
+    default:
+      return <DashboardPage onNavigate={(p) => onNavigate(p)} />;
+  }
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+  const [editStudentId, setEditStudentId] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleNavigate = (page: Page) => {
+  const handleNavigate = (page: Page, params?: Record<string, string>) => {
+    if (page === "edit-student" && params?.id) {
+      setEditStudentId(params.id);
+    }
     setCurrentPage(page);
     setMobileMenuOpen(false);
   };
@@ -42,10 +592,8 @@ export default function App() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <div className="sticky top-0 h-screen">
-          <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
-        </div>
+      <div className="hidden lg:block sticky top-0 h-screen">
+        <AppSidebar currentPage={currentPage} onNavigate={handleNavigate} />
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -58,13 +606,13 @@ export default function App() {
             onClick={() => setMobileMenuOpen(false)}
           />
           <div className="fixed left-0 top-0 h-full z-50 lg:hidden animate-slide-in-left">
-            <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
+            <AppSidebar currentPage={currentPage} onNavigate={handleNavigate} />
           </div>
         </>
       )}
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col min-h-screen">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card sticky top-0 z-30">
           <div className="flex items-center gap-2">
@@ -73,25 +621,34 @@ export default function App() {
               size="icon"
               className="w-9 h-9"
               onClick={() => setMobileMenuOpen((v) => !v)}
+              data-ocid="sidebar.button"
             >
-              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              {mobileMenuOpen ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Menu className="w-4 h-4" />
+              )}
             </Button>
-            <span className="font-display font-bold text-foreground">
-              JMDA · <span className="text-primary">{PAGE_TITLES[currentPage]}</span>
+            <span className="font-display font-bold text-foreground text-sm">
+              JMDA ·{" "}
+              <span className="text-primary">{PAGE_TITLES[currentPage]}</span>
             </span>
           </div>
         </div>
 
-        {/* Page with fade-in transition */}
+        {/* Page */}
         <div key={currentPage} className="flex-1 animate-fade-in">
-          <PageContent page={currentPage} />
+          <PageContent
+            page={currentPage}
+            onNavigate={handleNavigate}
+            editStudentId={editStudentId}
+          />
         </div>
 
         {/* Footer */}
-        <footer className="px-6 lg:px-8 py-4 border-t border-border mt-auto">
+        <footer className="px-6 lg:px-8 py-4 border-t border-border mt-auto no-print">
           <p className="text-xs text-muted-foreground text-center">
-            © {new Date().getFullYear()}.{" "}
-            Built with ❤️ using{" "}
+            © {new Date().getFullYear()}. Built with ❤️ using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
               target="_blank"

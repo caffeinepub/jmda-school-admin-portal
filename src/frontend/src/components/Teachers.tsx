@@ -1,23 +1,3 @@
-import { useState } from "react";
-import { Plus, Pencil, Trash2, GraduationCap, Search, AlertCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,17 +8,45 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
-  useTeachers,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertCircle,
+  GraduationCap,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import type { Teacher } from "../backend.d";
+import {
   useCreateTeacher,
-  useUpdateTeacher,
   useDeleteTeacher,
   useIsAdmin,
+  useTeachers,
+  useUpdateTeacher,
 } from "../hooks/useQueries";
-import type { Teacher } from "../backend.d";
 
 interface TeacherFormData {
   name: string;
@@ -63,7 +71,8 @@ const DEPARTMENTS = [
 const deptColors: Record<string, string> = {
   Mathematics: "bg-blue-500/15 text-blue-400 border-blue-500/30",
   Science: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  "English Language Arts": "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  "English Language Arts":
+    "bg-purple-500/15 text-purple-400 border-purple-500/30",
   "Social Studies": "bg-amber-500/15 text-amber-400 border-amber-500/30",
   "Physical Education": "bg-orange-500/15 text-orange-400 border-orange-500/30",
   "Arts & Music": "bg-pink-500/15 text-pink-400 border-pink-500/30",
@@ -100,7 +109,7 @@ export default function Teachers() {
   const filtered = (teachers ?? []).filter(
     (t) =>
       t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.department.toLowerCase().includes(search.toLowerCase())
+      t.department.toLowerCase().includes(search.toLowerCase()),
   );
 
   const openAdd = () => {
@@ -119,8 +128,14 @@ export default function Teachers() {
 
   const handleSubmit = async () => {
     const err = validateForm(form);
-    if (err) { setFormError(err); return; }
-    const payload = { name: form.name.trim(), department: form.department.trim() };
+    if (err) {
+      setFormError(err);
+      return;
+    }
+    const payload = {
+      name: form.name.trim(),
+      department: form.department.trim(),
+    };
 
     try {
       if (editing) {
@@ -154,13 +169,18 @@ export default function Teachers() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 animate-fade-in">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Teachers</h1>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            Teachers
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {teachers?.length ?? 0} faculty members
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={openAdd} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
+          <Button
+            onClick={openAdd}
+            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
             <Plus className="w-4 h-4" />
             Add Teacher
           </Button>
@@ -183,37 +203,61 @@ export default function Teachers() {
         <Table>
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="text-muted-foreground font-semibold">Name</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Department</TableHead>
-              {isAdmin && <TableHead className="text-muted-foreground font-semibold text-right">Actions</TableHead>}
+              <TableHead className="text-muted-foreground font-semibold">
+                Name
+              </TableHead>
+              <TableHead className="text-muted-foreground font-semibold">
+                Department
+              </TableHead>
+              {isAdmin && (
+                <TableHead className="text-muted-foreground font-semibold text-right">
+                  Actions
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              (["sk1","sk2","sk3","sk4","sk5"]).map((sk) => (
+              ["sk1", "sk2", "sk3", "sk4", "sk5"].map((sk) => (
                 <TableRow key={sk} className="border-border">
-                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-28 rounded-full" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-36" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-28 rounded-full" />
+                  </TableCell>
                   {isAdmin && <TableCell />}
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 3 : 2} className="text-center py-16">
+                <TableCell
+                  colSpan={isAdmin ? 3 : 2}
+                  className="text-center py-16"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <GraduationCap className="w-10 h-10 text-muted-foreground opacity-40" />
                     <p className="text-muted-foreground text-sm">
-                      {search ? "No teachers match your search." : "No teachers added yet."}
+                      {search
+                        ? "No teachers match your search."
+                        : "No teachers added yet."}
                     </p>
                   </div>
                 </TableCell>
               </TableRow>
             ) : (
               filtered.map((teacher) => (
-                <TableRow key={teacher.id.toString()} className="border-border hover:bg-accent/20 transition-colors">
-                  <TableCell className="font-medium text-foreground">{teacher.name}</TableCell>
+                <TableRow
+                  key={teacher.id.toString()}
+                  className="border-border hover:bg-accent/20 transition-colors"
+                >
+                  <TableCell className="font-medium text-foreground">
+                    {teacher.name}
+                  </TableCell>
                   <TableCell>
-                    <Badge className={`text-xs font-semibold border ${getDeptColor(teacher.department)}`}>
+                    <Badge
+                      className={`text-xs font-semibold border ${getDeptColor(teacher.department)}`}
+                    >
                       {teacher.department}
                     </Badge>
                   </TableCell>
@@ -266,7 +310,9 @@ export default function Teachers() {
               <Input
                 id="tname"
                 value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, name: e.target.value }))
+                }
                 placeholder="e.g. Dr. Marcus Webb"
                 className="bg-background border-border"
               />
@@ -277,20 +323,32 @@ export default function Teachers() {
                 id="tdept"
                 list="dept-list"
                 value={form.department}
-                onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, department: e.target.value }))
+                }
                 placeholder="e.g. Mathematics"
                 className="bg-background border-border"
               />
               <datalist id="dept-list">
-                {DEPARTMENTS.map((d) => <option key={d} value={d} />)}
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d} />
+                ))}
               </datalist>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setFormOpen(false)} disabled={isPending}>
+            <Button
+              variant="ghost"
+              onClick={() => setFormOpen(false)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isPending} className="bg-primary text-primary-foreground">
+            <Button
+              onClick={handleSubmit}
+              disabled={isPending}
+              className="bg-primary text-primary-foreground"
+            >
               {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {editing ? "Update" : "Add Teacher"}
             </Button>
@@ -299,21 +357,34 @@ export default function Teachers() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Delete Teacher?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display">
+              Delete Teacher?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove <strong className="text-foreground">{deleteTarget?.name}</strong>. This action cannot be undone.
+              This will permanently remove{" "}
+              <strong className="text-foreground">{deleteTarget?.name}</strong>.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-border">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              {deleteTeacher.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
+              {deleteTeacher.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

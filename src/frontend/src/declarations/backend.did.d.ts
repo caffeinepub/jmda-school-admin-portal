@@ -25,8 +25,31 @@ export interface ClassView {
   'gradeLevel' : bigint,
   'teacherId' : TeacherId,
 }
+export interface FeePayment {
+  'id' : FeePaymentId,
+  'feesTerm' : string,
+  'total' : bigint,
+  'studentId' : StudentId,
+  'admissionFee' : bigint,
+  'date' : string,
+  'fine' : bigint,
+  'createdAt' : Time,
+  'transport' : bigint,
+  'deposit' : bigint,
+  'others' : bigint,
+  'discountInFee' : bigint,
+  'uniform' : bigint,
+  'books' : bigint,
+  'termlyFee' : bigint,
+  'dueableBalance' : bigint,
+  'artMaterial' : bigint,
+  'registrationFee' : bigint,
+  'previousBalance' : bigint,
+}
+export type FeePaymentId = bigint;
 export interface SchoolStats {
   'teacherCount' : bigint,
+  'totalFeeCollected' : bigint,
   'classCount' : bigint,
   'studentCount' : bigint,
   'announcementCount' : bigint,
@@ -36,6 +59,9 @@ export interface Student {
   'guardianContact' : string,
   'name' : string,
   'gradeLevel' : bigint,
+  'registrationNo' : string,
+  'className' : string,
+  'guardianName' : string,
 }
 export type StudentId = bigint;
 export interface Teacher {
@@ -56,21 +82,47 @@ export interface _SERVICE {
   'claimAdmin' : ActorMethod<[], boolean>,
   'createAnnouncement' : ActorMethod<[string, string], AnnouncementId>,
   'createClass' : ActorMethod<[string, bigint, TeacherId], ClassId>,
-  'createStudent' : ActorMethod<[string, bigint, string], StudentId>,
+  'createFeePayment' : ActorMethod<
+    [
+      StudentId,
+      string,
+      string,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+    ],
+    FeePaymentId
+  >,
+  'createStudent' : ActorMethod<
+    [string, string, bigint, string, string, string],
+    StudentId
+  >,
   'createTeacher' : ActorMethod<[string, string], TeacherId>,
   'deleteAnnouncement' : ActorMethod<[AnnouncementId], undefined>,
   'deleteClass' : ActorMethod<[ClassId], undefined>,
+  'deleteFeePayment' : ActorMethod<[FeePaymentId], undefined>,
   'deleteStudent' : ActorMethod<[StudentId], undefined>,
   'deleteTeacher' : ActorMethod<[TeacherId], undefined>,
   'forceClaimAdmin' : ActorMethod<[], boolean>,
   'getAllAnnouncements' : ActorMethod<[], Array<Announcement>>,
   'getAllClasses' : ActorMethod<[], Array<ClassView>>,
+  'getAllFeePayments' : ActorMethod<[], Array<FeePayment>>,
   'getAllStudents' : ActorMethod<[], Array<Student>>,
   'getAllTeachers' : ActorMethod<[], Array<Teacher>>,
   'getAnnouncement' : ActorMethod<[AnnouncementId], [] | [Announcement]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getClass' : ActorMethod<[ClassId], [] | [ClassView]>,
+  'getFeePaymentsByStudent' : ActorMethod<[StudentId], Array<FeePayment>>,
   'getSchoolStats' : ActorMethod<[], SchoolStats>,
   'getStudent' : ActorMethod<[StudentId], [] | [Student]>,
   'getTeacher' : ActorMethod<[TeacherId], [] | [Teacher]>,
@@ -79,7 +131,10 @@ export interface _SERVICE {
   'removeStudentFromClass' : ActorMethod<[ClassId, StudentId], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'updateClass' : ActorMethod<[ClassId, string, bigint, TeacherId], undefined>,
-  'updateStudent' : ActorMethod<[StudentId, string, bigint, string], undefined>,
+  'updateStudent' : ActorMethod<
+    [StudentId, string, string, bigint, string, string, string],
+    undefined
+  >,
   'updateTeacher' : ActorMethod<[TeacherId, string, string], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

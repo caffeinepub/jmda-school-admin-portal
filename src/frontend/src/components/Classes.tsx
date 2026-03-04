@@ -1,15 +1,3 @@
-import { useState } from "react";
-import { Plus, Pencil, Trash2, BookOpen, Search, AlertCircle, Loader2, ArrowLeft, UserPlus, UserMinus, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +8,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -28,20 +27,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import {
-  useClasses,
-  useTeachers,
-  useStudents,
-  useCreateClass,
-  useUpdateClass,
-  useDeleteClass,
-  useAddStudentToClass,
-  useRemoveStudentFromClass,
-  useIsAdmin,
-} from "../hooks/useQueries";
+  AlertCircle,
+  ArrowLeft,
+  BookOpen,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  UserMinus,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import type { ClassView } from "../backend.d";
+import {
+  useAddStudentToClass,
+  useClasses,
+  useCreateClass,
+  useDeleteClass,
+  useIsAdmin,
+  useRemoveStudentFromClass,
+  useStudents,
+  useTeachers,
+  useUpdateClass,
+} from "../hooks/useQueries";
 
 interface ClassFormData {
   name: string;
@@ -53,7 +65,12 @@ const emptyForm: ClassFormData = { name: "", gradeLevel: "", teacherId: "" };
 
 function validateForm(data: ClassFormData): string | null {
   if (!data.name.trim()) return "Class name is required.";
-  if (!data.gradeLevel || isNaN(Number(data.gradeLevel)) || Number(data.gradeLevel) < 1 || Number(data.gradeLevel) > 12)
+  if (
+    !data.gradeLevel ||
+    Number.isNaN(Number(data.gradeLevel)) ||
+    Number(data.gradeLevel) < 1 ||
+    Number(data.gradeLevel) > 12
+  )
     return "Grade level must be between 1 and 12.";
   if (!data.teacherId) return "Please select a teacher.";
   return null;
@@ -76,16 +93,19 @@ function ClassDetail({
 
   const teacher = teachers?.find((t) => t.id === cls.teacherId);
   const enrolledStudents = (students ?? []).filter((s) =>
-    cls.studentIds.some((id) => id === s.id)
+    cls.studentIds.some((id) => id === s.id),
   );
   const availableStudents = (students ?? []).filter(
-    (s) => !cls.studentIds.some((id) => id === s.id)
+    (s) => !cls.studentIds.some((id) => id === s.id),
   );
 
   const handleAdd = async () => {
     if (!addStudentId) return;
     try {
-      await addStudent.mutateAsync({ classId: cls.id, studentId: BigInt(addStudentId) });
+      await addStudent.mutateAsync({
+        classId: cls.id,
+        studentId: BigInt(addStudentId),
+      });
       toast.success("Student added to class.");
       setAddStudentId("");
     } catch {
@@ -115,15 +135,23 @@ function ClassDetail({
 
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <h1 className="font-display text-3xl font-bold text-foreground">{cls.name}</h1>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            {cls.name}
+          </h1>
           <Badge className="bg-primary/20 text-primary border-primary/30 font-semibold">
             Grade {cls.gradeLevel.toString()}
           </Badge>
         </div>
         <p className="text-muted-foreground text-sm">
-          Teacher: <span className="text-foreground font-medium">{teacher?.name ?? "Unassigned"}</span>
+          Teacher:{" "}
+          <span className="text-foreground font-medium">
+            {teacher?.name ?? "Unassigned"}
+          </span>
           {teacher && (
-            <span className="text-muted-foreground"> · {teacher.department}</span>
+            <span className="text-muted-foreground">
+              {" "}
+              · {teacher.department}
+            </span>
           )}
         </p>
       </div>
@@ -133,7 +161,9 @@ function ClassDetail({
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-muted-foreground" />
-            <h2 className="font-semibold text-foreground text-sm">Enrolled Students</h2>
+            <h2 className="font-semibold text-foreground text-sm">
+              Enrolled Students
+            </h2>
           </div>
           <Badge className="bg-muted text-muted-foreground border-border font-mono text-xs">
             {enrolledStudents.length}
@@ -142,15 +172,25 @@ function ClassDetail({
 
         {enrolledStudents.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-muted-foreground text-sm">No students enrolled yet.</p>
+            <p className="text-muted-foreground text-sm">
+              No students enrolled yet.
+            </p>
           </div>
         ) : (
           <ul className="divide-y divide-border">
             {enrolledStudents.map((student) => (
-              <li key={student.id.toString()} className="flex items-center justify-between px-4 py-3 hover:bg-accent/20 transition-colors">
+              <li
+                key={student.id.toString()}
+                className="flex items-center justify-between px-4 py-3 hover:bg-accent/20 transition-colors"
+              >
                 <div>
-                  <p className="font-medium text-foreground text-sm">{student.name}</p>
-                  <p className="text-xs text-muted-foreground">Grade {student.gradeLevel.toString()} · {student.guardianContact}</p>
+                  <p className="font-medium text-foreground text-sm">
+                    {student.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Grade {student.gradeLevel.toString()} ·{" "}
+                    {student.guardianContact}
+                  </p>
                 </div>
                 {isAdmin && (
                   <Button
@@ -194,7 +234,11 @@ function ClassDetail({
               disabled={!addStudentId || addStudent.isPending}
               className="bg-primary text-primary-foreground"
             >
-              {addStudent.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
+              {addStudent.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Add"
+              )}
             </Button>
           </div>
         </div>
@@ -220,7 +264,7 @@ export default function Classes() {
   const [selectedClass, setSelectedClass] = useState<ClassView | null>(null);
 
   const filtered = (classes ?? []).filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
+    c.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const getTeacherName = (id: bigint) =>
@@ -246,7 +290,10 @@ export default function Classes() {
 
   const handleSubmit = async () => {
     const err = validateForm(form);
-    if (err) { setFormError(err); return; }
+    if (err) {
+      setFormError(err);
+      return;
+    }
     const payload = {
       name: form.name.trim(),
       gradeLevel: BigInt(form.gradeLevel),
@@ -282,7 +329,8 @@ export default function Classes() {
 
   // Show class detail
   if (selectedClass) {
-    const live = classes?.find((c) => c.id === selectedClass.id) ?? selectedClass;
+    const live =
+      classes?.find((c) => c.id === selectedClass.id) ?? selectedClass;
     return (
       <ClassDetail
         key={live.id.toString()}
@@ -298,13 +346,18 @@ export default function Classes() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 animate-fade-in">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Classes</h1>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            Classes
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {classes?.length ?? 0} active classes
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={openAdd} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
+          <Button
+            onClick={openAdd}
+            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
             <Plus className="w-4 h-4" />
             New Class
           </Button>
@@ -325,8 +378,11 @@ export default function Classes() {
       {/* Class cards grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(["sk1","sk2","sk3","sk4","sk5","sk6"]).map((sk) => (
-            <div key={sk} className="rounded-xl p-4 bg-card border border-border shadow-card">
+          {["sk1", "sk2", "sk3", "sk4", "sk5", "sk6"].map((sk) => (
+            <div
+              key={sk}
+              className="rounded-xl p-4 bg-card border border-border shadow-card"
+            >
               <Skeleton className="h-5 w-40 mb-2" />
               <Skeleton className="h-4 w-24 mb-3" />
               <Skeleton className="h-3 w-32" />
@@ -337,7 +393,9 @@ export default function Classes() {
         <div className="rounded-xl p-16 bg-card border border-border text-center shadow-card animate-fade-in">
           <BookOpen className="w-12 h-12 text-muted-foreground opacity-40 mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">
-            {search ? "No classes match your search." : "No classes created yet."}
+            {search
+              ? "No classes match your search."
+              : "No classes created yet."}
           </p>
         </div>
       ) : (
@@ -359,7 +417,8 @@ export default function Classes() {
                       Grade {cls.gradeLevel.toString()}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {cls.studentIds.length} student{cls.studentIds.length !== 1 ? "s" : ""}
+                      {cls.studentIds.length} student
+                      {cls.studentIds.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 </div>
@@ -369,7 +428,10 @@ export default function Classes() {
                       variant="ghost"
                       size="icon"
                       className="w-7 h-7 hover:bg-primary/15 hover:text-primary"
-                      onClick={(e) => { e.stopPropagation(); openEdit(cls); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(cls);
+                      }}
                     >
                       <Pencil className="w-3 h-3" />
                     </Button>
@@ -377,7 +439,10 @@ export default function Classes() {
                       variant="ghost"
                       size="icon"
                       className="w-7 h-7 hover:bg-destructive/15 hover:text-destructive"
-                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(cls); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(cls);
+                      }}
                     >
                       <Trash2 className="w-3 h-3" />
                     </Button>
@@ -413,7 +478,9 @@ export default function Classes() {
               <Input
                 id="cname"
                 value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, name: e.target.value }))
+                }
                 placeholder="e.g. Algebra II"
                 className="bg-background border-border"
               />
@@ -426,7 +493,9 @@ export default function Classes() {
                 min={1}
                 max={12}
                 value={form.gradeLevel}
-                onChange={(e) => setForm((p) => ({ ...p, gradeLevel: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, gradeLevel: e.target.value }))
+                }
                 placeholder="e.g. 10"
                 className="bg-background border-border"
               />
@@ -451,10 +520,18 @@ export default function Classes() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setFormOpen(false)} disabled={isPending}>
+            <Button
+              variant="ghost"
+              onClick={() => setFormOpen(false)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isPending} className="bg-primary text-primary-foreground">
+            <Button
+              onClick={handleSubmit}
+              disabled={isPending}
+              className="bg-primary text-primary-foreground"
+            >
               {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {editing ? "Update" : "Create Class"}
             </Button>
@@ -463,21 +540,34 @@ export default function Classes() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Delete Class?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display">
+              Delete Class?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove <strong className="text-foreground">{deleteTarget?.name}</strong>. Students will not be deleted.
+              This will permanently remove{" "}
+              <strong className="text-foreground">{deleteTarget?.name}</strong>.
+              Students will not be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-border">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              {deleteClass.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
+              {deleteClass.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

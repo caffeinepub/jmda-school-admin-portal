@@ -1,36 +1,70 @@
-import { Users, GraduationCap, BookOpen, Megaphone, TrendingUp, AlertCircle, ShieldCheck, Loader2 } from "lucide-react";
-import { useSchoolStats, useAnnouncements, useIsAdmin, useClaimAdmin, useForceClaimAdmin } from "../hooks/useQueries";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { formatNanoDate } from "../utils/formatDate";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertCircle,
+  BookOpen,
+  DollarSign,
+  GraduationCap,
+  Loader2,
+  Megaphone,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import {
+  useAnnouncements,
+  useClaimAdmin,
+  useForceClaimAdmin,
+  useIsAdmin,
+  useSchoolStats,
+} from "../hooks/useQueries";
+import { formatNanoDate } from "../utils/formatDate";
 
 interface StatCardProps {
   label: string;
   value: bigint | undefined;
   icon: React.ElementType;
   color: string;
+  format?: "number" | "currency";
 }
 
-function StatCard({ label, value, icon: Icon, color }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  format = "number",
+}: StatCardProps) {
+  const displayValue =
+    value !== undefined
+      ? format === "currency"
+        ? Number(value).toLocaleString()
+        : value.toString()
+      : undefined;
+
   return (
     <div className="stat-card rounded-xl p-5 shadow-card animate-fade-in">
       <div className="flex items-start justify-between mb-4">
-        <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center`}>
+        <div
+          className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center`}
+        >
           <Icon className="w-5 h-5" />
         </div>
         <TrendingUp className="w-4 h-4 text-muted-foreground" />
       </div>
       <div>
-        {value !== undefined ? (
-          <p className="font-display text-3xl font-bold text-foreground tracking-tight">
-            {value.toString()}
+        {displayValue !== undefined ? (
+          <p className="font-display text-2xl lg:text-3xl font-bold text-foreground tracking-tight truncate">
+            {displayValue}
           </p>
         ) : (
           <Skeleton className="h-9 w-16 mb-1" />
         )}
-        <p className="text-sm text-muted-foreground mt-1 font-medium">{label}</p>
+        <p className="text-sm text-muted-foreground mt-1 font-medium">
+          {label}
+        </p>
       </div>
     </div>
   );
@@ -38,7 +72,8 @@ function StatCard({ label, value, icon: Icon, color }: StatCardProps) {
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useSchoolStats();
-  const { data: announcements, isLoading: announcementsLoading } = useAnnouncements();
+  const { data: announcements, isLoading: announcementsLoading } =
+    useAnnouncements();
   const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
   const { identity } = useInternetIdentity();
   const claimAdmin = useClaimAdmin();
@@ -88,6 +123,13 @@ export default function Dashboard() {
       icon: Megaphone,
       color: "bg-purple-500/20 border border-purple-500/30 text-purple-400",
     },
+    {
+      label: "Total Fee Collected",
+      value: stats?.totalFeeCollected,
+      icon: DollarSign,
+      color: "bg-emerald-500/20 border border-emerald-500/30 text-emerald-400",
+      format: "currency" as const,
+    },
   ];
 
   return (
@@ -97,8 +139,7 @@ export default function Dashboard() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">
-              Welcome to{" "}
-              <span className="gradient-text">JMDA</span>
+              Welcome to <span className="gradient-text">JMDA</span>
             </h1>
             <p className="text-muted-foreground mt-1">
               {identity
@@ -111,7 +152,11 @@ export default function Dashboard() {
           <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs text-muted-foreground font-medium">
-              {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
             </span>
           </div>
         </div>
@@ -126,9 +171,12 @@ export default function Dashboard() {
                 <ShieldCheck className="w-5 h-5 text-amber-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground text-sm">Read-Only Access</h3>
+                <h3 className="font-semibold text-foreground text-sm">
+                  Read-Only Access
+                </h3>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  You currently have read-only access. If you are the school administrator, click below to claim full admin access.
+                  You currently have read-only access. If you are the school
+                  administrator, click below to claim full admin access.
                 </p>
               </div>
             </div>
@@ -155,8 +203,8 @@ export default function Dashboard() {
 
       {/* Stats grid */}
       {statsLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {(["s1","s2","s3","s4"]).map((k) => (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {["s1", "s2", "s3", "s4", "s5"].map((k) => (
             <div key={k} className="stat-card rounded-xl p-5">
               <Skeleton className="h-10 w-10 rounded-lg mb-4" />
               <Skeleton className="h-9 w-16 mb-2" />
@@ -165,7 +213,7 @@ export default function Dashboard() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {statCards.map((card) => (
             <StatCard key={card.label} {...card} />
           ))}
@@ -185,8 +233,11 @@ export default function Dashboard() {
 
         {announcementsLoading ? (
           <div className="space-y-3">
-            {(["a1","a2","a3"]).map((k) => (
-              <div key={k} className="rounded-xl p-4 bg-card border border-border">
+            {["a1", "a2", "a3"].map((k) => (
+              <div
+                key={k}
+                className="rounded-xl p-4 bg-card border border-border"
+              >
                 <Skeleton className="h-5 w-48 mb-2" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-3 w-20 mt-2" />
@@ -205,8 +256,12 @@ export default function Dashboard() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground text-sm truncate">{ann.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{ann.message}</p>
+                      <h3 className="font-semibold text-foreground text-sm truncate">
+                        {ann.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {ann.message}
+                      </p>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0 mt-0.5">
                       {formatNanoDate(ann.date)}
@@ -220,7 +275,9 @@ export default function Dashboard() {
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
               <AlertCircle className="w-6 h-6 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground text-sm">No announcements yet.</p>
+            <p className="text-muted-foreground text-sm">
+              No announcements yet.
+            </p>
             {isAdmin && (
               <p className="text-xs text-muted-foreground mt-1">
                 Go to Announcements to post one.
