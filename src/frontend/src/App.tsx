@@ -8,9 +8,12 @@ import {
   BookOpen,
   BookText,
   Building2,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  Clock,
+  Edit,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -18,6 +21,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Plus,
   Printer,
   Receipt,
   Settings,
@@ -36,13 +40,28 @@ import { useIsAdmin } from "./hooks/useQueries";
 import ActiveInactivePage from "./components/pages/ActiveInactivePage";
 import AddStudentPage from "./components/pages/AddStudentPage";
 import AdmissionLetterPage from "./components/pages/AdmissionLetterPage";
+import AttendanceClasswisePage from "./components/pages/AttendanceClasswisePage";
 import AttendancePage from "./components/pages/AttendancePage";
+import CertificatesGeneratePage from "./components/pages/CertificatesGeneratePage";
+import CertificatesTemplatesPage from "./components/pages/CertificatesTemplatesPage";
+import ClassTestsMarksPage from "./components/pages/ClassTestsMarksPage";
+import ClassTestsResultPage from "./components/pages/ClassTestsResultPage";
 import ClassesPage from "./components/pages/ClassesPage";
 import ComingSoonPage from "./components/pages/ComingSoonPage";
 // Pages
 import DashboardPage from "./components/pages/DashboardPage";
+import EmployeesAttendancePage from "./components/pages/EmployeesAttendancePage";
+import EmployeesAttendanceReportPage from "./components/pages/EmployeesAttendanceReportPage";
 import EmployeesPage from "./components/pages/EmployeesPage";
+import ExamsAddUpdatePage from "./components/pages/ExamsAddUpdatePage";
+import ExamsBlankAwardPage from "./components/pages/ExamsBlankAwardPage";
+import ExamsCreatePage from "./components/pages/ExamsCreatePage";
+import ExamsDateSheetPage from "./components/pages/ExamsDateSheetPage";
+import ExamsMarksPage from "./components/pages/ExamsMarksPage";
 import ExamsPage from "./components/pages/ExamsPage";
+import ExamsResultCardPage from "./components/pages/ExamsResultCardPage";
+import ExamsResultSheetPage from "./components/pages/ExamsResultSheetPage";
+import ExamsSchedulePage from "./components/pages/ExamsSchedulePage";
 import FamiliesPage from "./components/pages/FamiliesPage";
 import FeeHistoryPage from "./components/pages/FeeHistoryPage";
 import FeesCollectPage from "./components/pages/FeesCollectPage";
@@ -54,12 +73,25 @@ import FeesReportPage from "./components/pages/FeesReportPage";
 import HomeworkPage from "./components/pages/HomeworkPage";
 import PromoteStudentsPage from "./components/pages/PromoteStudentsPage";
 import ReportsPage from "./components/pages/ReportsPage";
+import ReportsParentInfoPage from "./components/pages/ReportsParentInfoPage";
+import ReportsStaffMonthlyAttPage from "./components/pages/ReportsStaffMonthlyAttPage";
+import ReportsStudentCardPage from "./components/pages/ReportsStudentCardPage";
+import ReportsStudentInfoPage from "./components/pages/ReportsStudentInfoPage";
+import ReportsStudentMonthlyAttPage from "./components/pages/ReportsStudentMonthlyAttPage";
 import SalaryPage from "./components/pages/SalaryPage";
 import StudentIdCardsPage from "./components/pages/StudentIdCardsPage";
+import StudentsAttendancePage from "./components/pages/StudentsAttendancePage";
+import StudentsAttendanceReportPage from "./components/pages/StudentsAttendanceReportPage";
 import StudentsPage from "./components/pages/StudentsPage";
 import SubjectsPage from "./components/pages/SubjectsPage";
 import TeachersPage from "./components/pages/TeachersPage";
+import TimetableClassroomsPage from "./components/pages/TimetableClassroomsPage";
+import TimetableCreatePage from "./components/pages/TimetableCreatePage";
+import TimetableForClassPage from "./components/pages/TimetableForClassPage";
+import TimetableForTeacherPage from "./components/pages/TimetableForTeacherPage";
 import TimetablePage from "./components/pages/TimetablePage";
+import TimetablePeriodsPage from "./components/pages/TimetablePeriodsPage";
+import TimetableWeekdaysPage from "./components/pages/TimetableWeekdaysPage";
 
 // ── Page types ───────────────────────────────────────────────────────────────
 
@@ -101,7 +133,41 @@ export type Page =
   | "exams"
   | "class-tests"
   | "reports"
-  | "certificates";
+  | "certificates"
+  // Attendance sub-pages
+  | "attendance-students"
+  | "attendance-employees"
+  | "attendance-classwise"
+  | "attendance-students-report"
+  | "attendance-employees-report"
+  // Timetable sub-pages
+  | "timetable-weekdays"
+  | "timetable-periods"
+  | "timetable-classrooms"
+  | "timetable-create"
+  | "timetable-for-class"
+  | "timetable-for-teacher"
+  // Exams sub-pages
+  | "exams-create"
+  | "exams-add-update"
+  | "exams-marks"
+  | "exams-result-card"
+  | "exams-result-sheet"
+  | "exams-schedule"
+  | "exams-datesheet"
+  | "exams-blank-award"
+  // Class Tests sub-pages
+  | "classtests-marks"
+  | "classtests-result"
+  // Reports sub-pages
+  | "reports-student-card"
+  | "reports-student-info"
+  | "reports-parent-info"
+  | "reports-student-monthly-att"
+  | "reports-staff-monthly-att"
+  // Certificates sub-pages
+  | "certificates-generate"
+  | "certificates-templates";
 
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
@@ -142,6 +208,40 @@ const PAGE_TITLES: Record<Page, string> = {
   "class-tests": "Class Tests",
   reports: "Reports",
   certificates: "Certificates",
+  // Attendance sub-pages
+  "attendance-students": "Students Attendance",
+  "attendance-employees": "Employees Attendance",
+  "attendance-classwise": "Class wise Report",
+  "attendance-students-report": "Students Attendance Report",
+  "attendance-employees-report": "Employees Attendance Report",
+  // Timetable sub-pages
+  "timetable-weekdays": "Weekdays",
+  "timetable-periods": "Time Periods",
+  "timetable-classrooms": "Class Rooms",
+  "timetable-create": "Create Timetable",
+  "timetable-for-class": "Generate For Class",
+  "timetable-for-teacher": "Generate For Teacher",
+  // Exams sub-pages
+  "exams-create": "Create New Exam",
+  "exams-add-update": "Add / Update Exam",
+  "exams-marks": "Marks",
+  "exams-result-card": "Result Card",
+  "exams-result-sheet": "Result Sheet",
+  "exams-schedule": "Exam Schedule",
+  "exams-datesheet": "Date Sheet",
+  "exams-blank-award": "Blank Award List",
+  // Class Tests sub-pages
+  "classtests-marks": "Manage Test Marks",
+  "classtests-result": "Test Result",
+  // Reports sub-pages
+  "reports-student-card": "Students Report Card",
+  "reports-student-info": "Students Info Report",
+  "reports-parent-info": "Parents Info Report",
+  "reports-student-monthly-att": "Students Monthly Attendance",
+  "reports-staff-monthly-att": "Staff Monthly Attendance",
+  // Certificates sub-pages
+  "certificates-generate": "Generate Certificate",
+  "certificates-templates": "Certificate Templates",
 };
 
 // ── Nav items ────────────────────────────────────────────────────────────────
@@ -203,8 +303,57 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { page: "salary", label: "Salary", icon: Wallet },
-  { page: "attendance", label: "Attendance", icon: ClipboardList },
-  { page: "timetable", label: "Timetable", icon: ClipboardList },
+  {
+    label: "Attendance",
+    icon: ClipboardList,
+    children: [
+      {
+        page: "attendance-students",
+        label: "Students Attendance",
+        icon: ClipboardList,
+      },
+      {
+        page: "attendance-employees",
+        label: "Employees Attendance",
+        icon: ClipboardList,
+      },
+      {
+        page: "attendance-classwise",
+        label: "Class wise Report",
+        icon: BarChart2,
+      },
+      {
+        page: "attendance-students-report",
+        label: "Students Attendance Report",
+        icon: FileText,
+      },
+      {
+        page: "attendance-employees-report",
+        label: "Employees Attendance Report",
+        icon: FileText,
+      },
+    ],
+  },
+  {
+    label: "Timetable",
+    icon: CalendarDays,
+    children: [
+      { page: "timetable-weekdays", label: "Weekdays", icon: CalendarDays },
+      { page: "timetable-periods", label: "Time Periods", icon: Clock },
+      { page: "timetable-classrooms", label: "Class Rooms", icon: Building2 },
+      { page: "timetable-create", label: "Create Timetable", icon: Plus },
+      {
+        page: "timetable-for-class",
+        label: "Generate For Class",
+        icon: GraduationCap,
+      },
+      {
+        page: "timetable-for-teacher",
+        label: "Generate For Teacher",
+        icon: UserSquare,
+      },
+    ],
+  },
   { page: "homework", label: "Homework", icon: BookOpen },
   {
     page: "behaviour",
@@ -238,10 +387,79 @@ const NAV_ITEMS: NavItem[] = [
     icon: FileText,
     comingSoon: true,
   },
-  { page: "exams", label: "Exams", icon: FileText },
-  { page: "class-tests", label: "Class Tests", icon: ClipboardList },
-  { page: "reports", label: "Reports", icon: FileText },
-  { page: "certificates", label: "Certificates", icon: Star, comingSoon: true },
+  {
+    label: "Exams",
+    icon: BookOpen,
+    children: [
+      { page: "exams-create", label: "Create New Exam", icon: Plus },
+      { page: "exams-add-update", label: "Add / Update Exam", icon: Edit },
+      { page: "exams-marks", label: "Marks", icon: ClipboardList },
+      { page: "exams-result-card", label: "Result Card", icon: FileText },
+      { page: "exams-result-sheet", label: "Result Sheet", icon: FileText },
+      { page: "exams-schedule", label: "Exam Schedule", icon: CalendarDays },
+      { page: "exams-datesheet", label: "Date Sheet", icon: CalendarDays },
+      { page: "exams-blank-award", label: "Blank Award List", icon: Star },
+    ],
+  },
+  {
+    label: "Class Tests",
+    icon: ClipboardList,
+    children: [
+      {
+        page: "classtests-marks",
+        label: "Manage Test Marks",
+        icon: ClipboardList,
+      },
+      { page: "classtests-result", label: "Test Result", icon: FileText },
+    ],
+  },
+  {
+    label: "Reports",
+    icon: BarChart2,
+    children: [
+      {
+        page: "reports-student-card",
+        label: "Students Report Card",
+        icon: FileText,
+      },
+      {
+        page: "reports-student-info",
+        label: "Students Info Report",
+        icon: Users,
+      },
+      {
+        page: "reports-parent-info",
+        label: "Parents Info Report",
+        icon: Users,
+      },
+      {
+        page: "reports-student-monthly-att",
+        label: "Students Monthly Attendance",
+        icon: BarChart2,
+      },
+      {
+        page: "reports-staff-monthly-att",
+        label: "Staff Monthly Attendance",
+        icon: BarChart2,
+      },
+    ],
+  },
+  {
+    label: "Certificates",
+    icon: Star,
+    children: [
+      {
+        page: "certificates-generate",
+        label: "Generate Certificate",
+        icon: Star,
+      },
+      {
+        page: "certificates-templates",
+        label: "Certificate Templates",
+        icon: FileText,
+      },
+    ],
+  },
 ];
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────
@@ -482,16 +700,68 @@ function PageContent({
       return <SalaryPage />;
     case "attendance":
       return <AttendancePage />;
+    case "attendance-students":
+      return <StudentsAttendancePage />;
+    case "attendance-employees":
+      return <EmployeesAttendancePage />;
+    case "attendance-classwise":
+      return <AttendanceClasswisePage />;
+    case "attendance-students-report":
+      return <StudentsAttendanceReportPage />;
+    case "attendance-employees-report":
+      return <EmployeesAttendanceReportPage />;
     case "timetable":
       return <TimetablePage />;
+    case "timetable-weekdays":
+      return <TimetableWeekdaysPage />;
+    case "timetable-periods":
+      return <TimetablePeriodsPage />;
+    case "timetable-classrooms":
+      return <TimetableClassroomsPage />;
+    case "timetable-create":
+      return <TimetableCreatePage />;
+    case "timetable-for-class":
+      return <TimetableForClassPage />;
+    case "timetable-for-teacher":
+      return <TimetableForTeacherPage />;
     case "homework":
       return <HomeworkPage />;
     case "exams":
       return <ExamsPage />;
+    case "exams-create":
+      return <ExamsCreatePage />;
+    case "exams-add-update":
+      return <ExamsAddUpdatePage />;
+    case "exams-marks":
+      return <ExamsMarksPage />;
+    case "exams-result-card":
+      return <ExamsResultCardPage />;
+    case "exams-result-sheet":
+      return <ExamsResultSheetPage />;
+    case "exams-schedule":
+      return <ExamsSchedulePage />;
+    case "exams-datesheet":
+      return <ExamsDateSheetPage />;
+    case "exams-blank-award":
+      return <ExamsBlankAwardPage />;
     case "class-tests":
       return <ExamsPage />;
+    case "classtests-marks":
+      return <ClassTestsMarksPage />;
+    case "classtests-result":
+      return <ClassTestsResultPage />;
     case "reports":
       return <ReportsPage />;
+    case "reports-student-card":
+      return <ReportsStudentCardPage />;
+    case "reports-student-info":
+      return <ReportsStudentInfoPage />;
+    case "reports-parent-info":
+      return <ReportsParentInfoPage />;
+    case "reports-student-monthly-att":
+      return <ReportsStudentMonthlyAttPage />;
+    case "reports-staff-monthly-att":
+      return <ReportsStaffMonthlyAttPage />;
     case "general-settings":
       return (
         <ComingSoonPage
@@ -556,12 +826,11 @@ function PageContent({
         />
       );
     case "certificates":
-      return (
-        <ComingSoonPage
-          title="Certificates"
-          description="Generate and print student certificates."
-        />
-      );
+      return <CertificatesGeneratePage />;
+    case "certificates-generate":
+      return <CertificatesGeneratePage />;
+    case "certificates-templates":
+      return <CertificatesTemplatesPage />;
     case "print-list":
       return (
         <ComingSoonPage
