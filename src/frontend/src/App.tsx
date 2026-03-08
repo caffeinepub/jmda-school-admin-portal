@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toaster } from "@/components/ui/sonner";
 import {
   AlertCircle,
@@ -71,6 +70,7 @@ import FeesInvoicePage from "./components/pages/FeesInvoicePage";
 import FeesPaidSlipPage from "./components/pages/FeesPaidSlipPage";
 import FeesReportPage from "./components/pages/FeesReportPage";
 import HomeworkPage from "./components/pages/HomeworkPage";
+import ManageLoginPage from "./components/pages/ManageLoginPage";
 import PromoteStudentsPage from "./components/pages/PromoteStudentsPage";
 import ReportsPage from "./components/pages/ReportsPage";
 import ReportsParentInfoPage from "./components/pages/ReportsParentInfoPage";
@@ -167,7 +167,10 @@ export type Page =
   | "reports-staff-monthly-att"
   // Certificates sub-pages
   | "certificates-generate"
-  | "certificates-templates";
+  | "certificates-templates"
+  // Manage Login sub-pages
+  | "manage-login-students"
+  | "manage-login-employees";
 
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
@@ -242,6 +245,9 @@ const PAGE_TITLES: Record<Page, string> = {
   // Certificates sub-pages
   "certificates-generate": "Generate Certificate",
   "certificates-templates": "Certificate Templates",
+  // Manage Login sub-pages
+  "manage-login-students": "Manage Student Login",
+  "manage-login-employees": "Manage Employee Login",
 };
 
 // ── Nav items ────────────────────────────────────────────────────────────────
@@ -281,6 +287,11 @@ const NAV_ITEMS: NavItem[] = [
         comingSoon: true,
       },
       {
+        page: "manage-login-students",
+        label: "Manage Login",
+        icon: UserSquare,
+      },
+      {
         page: "promote-students",
         label: "Promote Students",
         icon: ChevronRight,
@@ -288,7 +299,18 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { page: "teachers", label: "Teachers", icon: UserSquare },
-  { page: "employees", label: "Employees", icon: Users },
+  {
+    label: "Employees",
+    icon: Users,
+    children: [
+      { page: "employees", label: "All Employees", icon: Users },
+      {
+        page: "manage-login-employees",
+        label: "Manage Login",
+        icon: UserSquare,
+      },
+    ],
+  },
   { page: "accounts", label: "Accounts", icon: Wallet, comingSoon: true },
   {
     label: "Fees",
@@ -560,9 +582,9 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
   const { data: isAdmin } = useIsAdmin();
 
   return (
-    <aside className="w-64 h-full bg-sidebar sidebar-glow flex flex-col">
+    <aside className="w-64 h-full bg-sidebar sidebar-glow flex flex-col overflow-hidden">
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-sidebar-border">
+      <div className="px-4 py-4 border-b border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <GraduationCap className="w-4 h-4 text-primary-foreground" />
@@ -578,8 +600,8 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
         </div>
       </div>
 
-      {/* Nav */}
-      <ScrollArea className="flex-1 py-2 scrollbar-thin">
+      {/* Nav — takes all remaining height and scrolls */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin py-2">
         <nav className="px-2 space-y-0.5">
           {NAV_ITEMS.map((item, i) => (
             <NavItemComponent
@@ -590,10 +612,10 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
             />
           ))}
         </nav>
-      </ScrollArea>
+      </div>
 
       {/* User */}
-      <div className="border-t border-sidebar-border p-3">
+      <div className="border-t border-sidebar-border p-3 shrink-0">
         {identity ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2 px-2">
@@ -614,7 +636,7 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
               size="sm"
               className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground"
               onClick={clear}
-              data-ocid="sidebar.button"
+              data-ocid="sidebar.logout_button"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out
@@ -627,7 +649,7 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
             className="w-full gap-2 text-xs"
             onClick={login}
             disabled={isLoggingIn}
-            data-ocid="sidebar.button"
+            data-ocid="sidebar.primary_button"
           >
             <LogIn className="w-3.5 h-3.5" />
             {isLoggingIn ? "Signing in..." : "Sign In"}
@@ -838,6 +860,10 @@ function PageContent({
           description="Print a basic list of all students."
         />
       );
+    case "manage-login-students":
+      return <ManageLoginPage title="Manage Student Login" />;
+    case "manage-login-employees":
+      return <ManageLoginPage title="Manage Employee Login" />;
     default:
       return <DashboardPage onNavigate={(p) => onNavigate(p)} />;
   }
@@ -874,7 +900,7 @@ export default function App() {
             className="fixed inset-0 bg-black/60 z-40 lg:hidden cursor-default"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed left-0 top-0 h-full z-50 lg:hidden animate-slide-in-left">
+          <div className="fixed left-0 top-0 h-screen w-64 z-50 lg:hidden animate-slide-in-left overflow-hidden">
             <AppSidebar currentPage={currentPage} onNavigate={handleNavigate} />
           </div>
         </>

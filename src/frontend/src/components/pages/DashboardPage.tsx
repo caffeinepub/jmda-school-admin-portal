@@ -57,19 +57,25 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       if (result) {
         toast.success("Admin access claimed successfully!");
       } else {
-        try {
-          const forced = await forceClaimAdmin.mutateAsync();
-          if (forced) {
-            toast.success("Admin access claimed successfully!");
-          } else {
-            toast.error("Could not claim admin access.");
-          }
-        } catch {
-          toast.error("Could not claim admin access.");
-        }
+        toast.error(
+          "An admin is already assigned. Use 'Force Claim Admin' if you are the admin on a new device.",
+        );
       }
     } catch {
       toast.error("An error occurred while claiming admin access.");
+    }
+  };
+
+  const handleForceClaimAdmin = async () => {
+    try {
+      const result = await forceClaimAdmin.mutateAsync();
+      if (result) {
+        toast.success("Admin rights transferred to this device successfully!");
+      } else {
+        toast.error("Could not transfer admin rights. Please try again.");
+      }
+    } catch {
+      toast.error("An error occurred while transferring admin access.");
     }
   };
 
@@ -147,24 +153,12 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
           </p>
         </div>
         {identity && !isAdmin && (
-          <div className="flex flex-col items-end gap-2">
-            <Badge
-              variant="secondary"
-              className="text-amber-400 bg-amber-400/10 border-amber-400/30"
-            >
-              Read-Only Access
-            </Badge>
-            <Button
-              size="sm"
-              className="bg-amber-500 hover:bg-amber-600 text-white text-xs"
-              onClick={handleClaimAdmin}
-              disabled={claimAdmin.isPending || forceClaimAdmin.isPending}
-              data-ocid="dashboard.primary_button"
-            >
-              <ShieldCheck className="w-3 h-3 mr-1" />
-              Claim Admin Access
-            </Button>
-          </div>
+          <Badge
+            variant="secondary"
+            className="text-amber-400 bg-amber-400/10 border-amber-400/30"
+          >
+            Read-Only Access
+          </Badge>
         )}
         {isAdmin && (
           <Badge className="bg-primary/20 text-primary border-primary/30">
@@ -173,6 +167,87 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
           </Badge>
         )}
       </div>
+
+      {/* Admin Access Panel */}
+      {identity && !isAdmin && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-amber-400 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4" />
+              Admin Access Required
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              You currently have read-only access. Choose one of the options
+              below to gain admin access.
+            </p>
+          </CardHeader>
+          <CardContent className="grid sm:grid-cols-2 gap-3">
+            {/* Option 1: First time setup */}
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  First Time Setup
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use this if no admin has been set yet for this portal.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs"
+                onClick={handleClaimAdmin}
+                disabled={claimAdmin.isPending || forceClaimAdmin.isPending}
+                data-ocid="dashboard.primary_button"
+              >
+                {claimAdmin.isPending ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Claiming...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3 h-3" />
+                    Claim Admin Access
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            {/* Option 2: Already admin on another device */}
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-amber-400">
+                  Already Admin on Another Device?
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use this if you are the admin but logging in on a new device.
+                  This will transfer admin rights to this device.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full border-amber-500/50 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 text-xs"
+                onClick={handleForceClaimAdmin}
+                disabled={claimAdmin.isPending || forceClaimAdmin.isPending}
+                data-ocid="dashboard.secondary_button"
+              >
+                {forceClaimAdmin.isPending ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Transferring...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3 h-3" />
+                    Force Claim Admin
+                  </span>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
