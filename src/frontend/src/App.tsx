@@ -582,7 +582,7 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
   const { data: isAdmin } = useIsAdmin();
 
   return (
-    <aside className="w-64 h-full bg-sidebar sidebar-glow flex flex-col overflow-hidden">
+    <aside className="w-64 h-full bg-sidebar sidebar-glow flex flex-col min-h-0">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5">
@@ -900,7 +900,7 @@ export default function App() {
             className="fixed inset-0 bg-black/60 z-40 lg:hidden cursor-default"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed left-0 top-0 h-screen w-64 z-50 lg:hidden animate-slide-in-left overflow-hidden">
+          <div className="fixed left-0 top-0 h-screen w-64 z-50 lg:hidden animate-slide-in-left overflow-y-auto">
             <AppSidebar currentPage={currentPage} onNavigate={handleNavigate} />
           </div>
         </>
