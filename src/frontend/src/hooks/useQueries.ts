@@ -34,6 +34,8 @@ export function useSchoolStats() {
       return actor.getSchoolStats();
     },
     enabled: !!actor && !isFetching,
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
   });
 }
 
@@ -46,6 +48,9 @@ export function useStudents() {
       return actor.getAllStudents();
     },
     enabled: !!actor && !isFetching,
+    // Keep previous data visible while refetching — never blank out the list
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
   });
 }
 
@@ -58,6 +63,9 @@ export function useTeachers() {
       return actor.getAllTeachers();
     },
     enabled: !!actor && !isFetching,
+    // Keep previous data visible while refetching — never blank out the list
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
   });
 }
 
@@ -70,6 +78,8 @@ export function useClasses() {
       return actor.getAllClasses();
     },
     enabled: !!actor && !isFetching,
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
   });
 }
 
@@ -82,6 +92,8 @@ export function useAnnouncements() {
       return actor.getAllAnnouncements();
     },
     enabled: !!actor && !isFetching,
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
   });
 }
 
@@ -126,6 +138,8 @@ export function useFeePayments() {
       return actor.getAllFeePayments();
     },
     enabled: !!actor && !isFetching,
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
   });
 }
 
@@ -140,6 +154,8 @@ export function useFeePaymentsByStudent(studentId: bigint | null) {
       return actor.getFeePaymentsByStudent(studentId);
     },
     enabled: !!actor && !isFetching && !!studentId,
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
   });
 }
 
