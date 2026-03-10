@@ -12,14 +12,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
   Table,
   TableBody,
   TableCell,
@@ -28,55 +20,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Edit, Plus, Trash2, Users } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
-import { type Employee, useEmployees } from "../../hooks/useSchoolData";
+import type { Page } from "../../App";
+import { useEmployees } from "../../hooks/useSchoolData";
 
-export default function EmployeesPage() {
+interface EmployeesPageProps {
+  onNavigate: (page: Page, params?: Record<string, string>) => void;
+}
+
+export default function EmployeesPage({ onNavigate }: EmployeesPageProps) {
   const [employees, setEmployees] = useEmployees();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    role: "",
-    department: "",
-    mobile: "",
-    salary: 0,
-  });
-
-  const openAdd = () => {
-    setEditId(null);
-    setForm({ name: "", role: "", department: "", mobile: "", salary: 0 });
-    setDialogOpen(true);
-  };
-  const openEdit = (e: Employee) => {
-    setEditId(e.id);
-    setForm({
-      name: e.name,
-      role: e.role,
-      department: e.department,
-      mobile: e.mobile,
-      salary: e.salary,
-    });
-    setDialogOpen(true);
-  };
-
-  const handleSave = () => {
-    if (!form.name.trim()) {
-      toast.error("Name is required.");
-      return;
-    }
-    if (editId) {
-      setEmployees((prev) =>
-        prev.map((e) => (e.id === editId ? { ...e, ...form } : e)),
-      );
-      toast.success("Employee updated.");
-    } else {
-      setEmployees((prev) => [...prev, { id: `emp_${Date.now()}`, ...form }]);
-      toast.success("Employee added.");
-    }
-    setDialogOpen(false);
-  };
 
   const handleDelete = (id: string) => {
     setEmployees((prev) => prev.filter((e) => e.id !== id));
@@ -93,7 +46,7 @@ export default function EmployeesPage() {
           </p>
         </div>
         <Button
-          onClick={openAdd}
+          onClick={() => onNavigate("edit-employee")}
           className="gap-2"
           data-ocid="employees.add_button"
         >
@@ -116,8 +69,8 @@ export default function EmployeesPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Department</TableHead>
                 <TableHead>Mobile</TableHead>
+                <TableHead>Joining Date</TableHead>
                 <TableHead>Salary (₹)</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -125,17 +78,32 @@ export default function EmployeesPage() {
             <TableBody>
               {employees.map((emp, idx) => (
                 <TableRow key={emp.id} data-ocid={`employees.row.${idx + 1}`}>
-                  <TableCell className="font-medium">{emp.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {emp.picture ? (
+                        <img
+                          src={emp.picture}
+                          alt={emp.name}
+                          className="w-7 h-7 rounded-full object-cover border border-border shrink-0"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-primary text-xs font-bold">
+                          {emp.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {emp.name}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="text-xs">
                       {emp.role || "-"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {emp.department || "-"}
-                  </TableCell>
                   <TableCell className="font-mono text-xs">
                     {emp.mobile || "-"}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {emp.dateOfJoining || "-"}
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     {emp.salary ? emp.salary.toLocaleString("en-IN") : "-"}
@@ -146,7 +114,9 @@ export default function EmployeesPage() {
                         variant="ghost"
                         size="icon"
                         className="w-7 h-7"
-                        onClick={() => openEdit(emp)}
+                        onClick={() =>
+                          onNavigate("edit-employee", { id: emp.id })
+                        }
                         data-ocid={`employees.edit_button.${idx + 1}`}
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -193,83 +163,6 @@ export default function EmployeesPage() {
           </Table>
         </div>
       )}
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent data-ocid="employees.dialog">
-          <DialogHeader>
-            <DialogTitle>
-              {editId ? "Edit Employee" : "Add Employee"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <Label>Name *</Label>
-              <Input
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                data-ocid="employees.input"
-              />
-            </div>
-            <div>
-              <Label>Role</Label>
-              <Input
-                value={form.role}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, role: e.target.value }))
-                }
-                placeholder="Teacher, Admin..."
-                data-ocid="employees.input"
-              />
-            </div>
-            <div>
-              <Label>Department</Label>
-              <Input
-                value={form.department}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, department: e.target.value }))
-                }
-                data-ocid="employees.input"
-              />
-            </div>
-            <div>
-              <Label>Mobile</Label>
-              <Input
-                value={form.mobile}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, mobile: e.target.value }))
-                }
-                data-ocid="employees.input"
-              />
-            </div>
-            <div>
-              <Label>Monthly Salary (₹)</Label>
-              <Input
-                type="number"
-                min={0}
-                value={form.salary}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, salary: Number(e.target.value) }))
-                }
-                data-ocid="employees.input"
-              />
-            </div>
-            <div className="sm:col-span-2 flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setDialogOpen(false)}
-                data-ocid="employees.cancel_button"
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSave} data-ocid="employees.save_button">
-                {editId ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

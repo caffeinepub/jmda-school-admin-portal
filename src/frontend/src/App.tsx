@@ -49,6 +49,7 @@ import ClassesPage from "./components/pages/ClassesPage";
 import ComingSoonPage from "./components/pages/ComingSoonPage";
 // Pages
 import DashboardPage from "./components/pages/DashboardPage";
+import EditEmployeePage from "./components/pages/EditEmployeePage";
 import EmployeesAttendancePage from "./components/pages/EmployeesAttendancePage";
 import EmployeesAttendanceReportPage from "./components/pages/EmployeesAttendanceReportPage";
 import EmployeesPage from "./components/pages/EmployeesPage";
@@ -71,6 +72,7 @@ import FeesPaidSlipPage from "./components/pages/FeesPaidSlipPage";
 import FeesReportPage from "./components/pages/FeesReportPage";
 import HomeworkPage from "./components/pages/HomeworkPage";
 import ManageLoginPage from "./components/pages/ManageLoginPage";
+import ProgressiveReportCardPage from "./components/pages/ProgressiveReportCardPage";
 import PromoteStudentsPage from "./components/pages/PromoteStudentsPage";
 import ReportsPage from "./components/pages/ReportsPage";
 import ReportsParentInfoPage from "./components/pages/ReportsParentInfoPage";
@@ -111,6 +113,7 @@ export type Page =
   | "promote-students"
   | "teachers"
   | "employees"
+  | "edit-employee"
   | "accounts"
   | "fees-invoice"
   | "fees-collect"
@@ -165,6 +168,7 @@ export type Page =
   | "reports-parent-info"
   | "reports-student-monthly-att"
   | "reports-staff-monthly-att"
+  | "progressive-report-card"
   // Certificates sub-pages
   | "certificates-generate"
   | "certificates-templates"
@@ -188,6 +192,7 @@ const PAGE_TITLES: Record<Page, string> = {
   "promote-students": "Promote Students",
   teachers: "Teachers",
   employees: "Employees",
+  "edit-employee": "Edit Staff",
   accounts: "Accounts",
   "fees-invoice": "Generate Fees Invoice",
   "fees-collect": "Collect Fees",
@@ -242,6 +247,7 @@ const PAGE_TITLES: Record<Page, string> = {
   "reports-parent-info": "Parents Info Report",
   "reports-student-monthly-att": "Students Monthly Attendance",
   "reports-staff-monthly-att": "Staff Monthly Attendance",
+  "progressive-report-card": "Progressive Report Card",
   // Certificates sub-pages
   "certificates-generate": "Generate Certificate",
   "certificates-templates": "Certificate Templates",
@@ -304,6 +310,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: Users,
     children: [
       { page: "employees", label: "All Employees", icon: Users },
+      { page: "edit-employee", label: "Edit Staff", icon: Edit },
       {
         page: "manage-login-employees",
         label: "Manage Login",
@@ -463,6 +470,11 @@ const NAV_ITEMS: NavItem[] = [
         page: "reports-staff-monthly-att",
         label: "Staff Monthly Attendance",
         icon: BarChart2,
+      },
+      {
+        page: "progressive-report-card",
+        label: "Progressive Report Card",
+        icon: FileText,
       },
     ],
   },
@@ -665,12 +677,14 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
 interface PageNavProps {
   onNavigate: (page: Page, params?: Record<string, string>) => void;
   editStudentId?: string;
+  editEmployeeId?: string;
 }
 
 function PageContent({
   page,
   onNavigate,
   editStudentId,
+  editEmployeeId,
 }: { page: Page } & PageNavProps) {
   switch (page) {
     case "dashboard":
@@ -698,12 +712,19 @@ function PageContent({
       return <PromoteStudentsPage />;
     case "teachers":
       return <TeachersPage />;
+    case "edit-employee":
+      return (
+        <EditEmployeePage
+          onNavigate={(p) => onNavigate(p)}
+          editId={editEmployeeId}
+        />
+      );
     case "classes":
       return <ClassesPage />;
     case "subjects":
       return <SubjectsPage />;
     case "employees":
-      return <EmployeesPage />;
+      return <EmployeesPage onNavigate={onNavigate} />;
     case "fees-invoice":
       return <FeesInvoicePage />;
     case "fees-collect":
@@ -784,6 +805,8 @@ function PageContent({
       return <ReportsStudentMonthlyAttPage />;
     case "reports-staff-monthly-att":
       return <ReportsStaffMonthlyAttPage />;
+    case "progressive-report-card":
+      return <ProgressiveReportCardPage />;
     case "general-settings":
       return (
         <ComingSoonPage
@@ -874,11 +897,15 @@ function PageContent({
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [editStudentId, setEditStudentId] = useState<string | undefined>();
+  const [editEmployeeId, setEditEmployeeId] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavigate = (page: Page, params?: Record<string, string>) => {
     if (page === "edit-student" && params?.id) {
       setEditStudentId(params.id);
+    }
+    if (page === "edit-employee" && params?.id) {
+      setEditEmployeeId(params.id);
     }
     setCurrentPage(page);
     setMobileMenuOpen(false);
@@ -937,6 +964,7 @@ export default function App() {
             page={currentPage}
             onNavigate={handleNavigate}
             editStudentId={editStudentId}
+            editEmployeeId={editEmployeeId}
           />
         </div>
 

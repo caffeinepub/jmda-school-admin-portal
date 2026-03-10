@@ -18,11 +18,26 @@ export interface Subject {
 
 export interface Employee {
   id: string;
+  // Section 1 - Basic Information
+  picture: string;
   name: string;
-  role: string;
-  department: string;
   mobile: string;
+  dateOfJoining: string;
+  role: string;
   salary: number;
+  // kept for backward compat
+  department: string;
+  // Section 2 - Other Information
+  fatherHusbandName: string;
+  nationalId: string;
+  education: string;
+  gender: string;
+  religion: string;
+  bloodGroup: string;
+  experience: string;
+  email: string;
+  dateOfBirth: string;
+  homeAddress: string;
 }
 
 export interface SalaryRecord {
@@ -126,19 +141,43 @@ export function useEmployees() {
   return useLocalStorage<Employee[]>("jmda_employees", [
     {
       id: "e1",
+      picture: "",
       name: "Rajesh Kumar",
       role: "Principal",
       department: "Administration",
       mobile: "9876543210",
+      dateOfJoining: "",
       salary: 45000,
+      fatherHusbandName: "",
+      nationalId: "",
+      education: "",
+      gender: "",
+      religion: "",
+      bloodGroup: "",
+      experience: "",
+      email: "",
+      dateOfBirth: "",
+      homeAddress: "",
     },
     {
       id: "e2",
+      picture: "",
       name: "Sunita Sharma",
       role: "Vice Principal",
       department: "Administration",
       mobile: "9876543211",
+      dateOfJoining: "",
       salary: 38000,
+      fatherHusbandName: "",
+      nationalId: "",
+      education: "",
+      gender: "",
+      religion: "",
+      bloodGroup: "",
+      experience: "",
+      email: "",
+      dateOfBirth: "",
+      homeAddress: "",
     },
   ]);
 }
