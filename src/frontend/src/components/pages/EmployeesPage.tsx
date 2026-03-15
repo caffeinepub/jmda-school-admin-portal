@@ -22,7 +22,7 @@ import {
 import { Edit, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { Page } from "../../App";
-import { useEmployees } from "../../hooks/useSchoolData";
+import { getEmployeeTeacherId, useEmployees } from "../../hooks/useSchoolData";
 
 interface EmployeesPageProps {
   onNavigate: (page: Page, params?: Record<string, string>) => void;
@@ -71,6 +71,7 @@ export default function EmployeesPage({ onNavigate }: EmployeesPageProps) {
                 <TableHead>Role</TableHead>
                 <TableHead>Mobile</TableHead>
                 <TableHead>Joining Date</TableHead>
+                <TableHead>Teacher ID</TableHead>
                 <TableHead>Salary (₹)</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -104,6 +105,11 @@ export default function EmployeesPage({ onNavigate }: EmployeesPageProps) {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {emp.dateOfJoining || "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {getEmployeeTeacherId(emp, idx)}
+                    </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     {emp.salary ? emp.salary.toLocaleString("en-IN") : "-"}

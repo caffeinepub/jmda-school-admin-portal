@@ -144,7 +144,9 @@ export default function StudentsPage({ onNavigate }: StudentsPageProps) {
                   data-ocid={`students.row.${idx + 1}`}
                 >
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {student.registrationNo || "-"}
+                    {student.registrationNo?.includes("TODO_MIGRATION")
+                      ? "-"
+                      : student.registrationNo || "-"}
                   </TableCell>
                   <TableCell className="font-medium">{student.name}</TableCell>
                   <TableCell>
@@ -153,10 +155,14 @@ export default function StudentsPage({ onNavigate }: StudentsPageProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {student.guardianName || "-"}
+                    {student.guardianName?.includes("TODO_MIGRATION")
+                      ? "-"
+                      : student.guardianName || "-"}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground font-mono">
-                    {student.guardianContact || "-"}
+                    {student.guardianContact?.includes("TODO_MIGRATION")
+                      ? "-"
+                      : student.guardianContact || "-"}
                   </TableCell>
                   {isAdmin && (
                     <TableCell className="text-right">

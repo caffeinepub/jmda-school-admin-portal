@@ -32,9 +32,10 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import TeacherPortalPage from "./components/pages/TeacherPortalPage";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
-import { useIsAdmin } from "./hooks/useQueries";
+import { useIsAdmin, useMyTeacherId } from "./hooks/useQueries";
 
 import ActiveInactivePage from "./components/pages/ActiveInactivePage";
 import AddStudentPage from "./components/pages/AddStudentPage";
@@ -523,8 +524,30 @@ function NavItemComponent({
     );
   });
 
+  // Keep group expanded when currentPage changes to one of its children
+  useEffect(() => {
+    if (!item.children) return;
+    const hasActive = item.children.some(
+      (c) =>
+        c.page === currentPage ||
+        c.children?.some((cc) => cc.page === currentPage),
+    );
+    if (hasActive) setExpanded(true);
+  }, [currentPage, item.children]);
+
   const isActive = item.page === currentPage;
   const hasActiveChild = item.children?.some((c) => c.page === currentPage);
+
+  // Scroll active leaf item into view
+  const activeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (isActive && activeRef.current) {
+      activeRef.current.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [isActive]);
 
   if (item.children) {
     return (
@@ -568,6 +591,7 @@ function NavItemComponent({
 
   return (
     <button
+      ref={activeRef}
       type="button"
       onClick={() => onNavigate(item.page!)}
       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
@@ -612,8 +636,14 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
         </div>
       </div>
 
-      {/* Nav — takes all remaining height and scrolls */}
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin py-2">
+      {/* Nav — takes all remaining height, always-visible scrollbar */}
+      <div
+        className="flex-1 min-h-0 overflow-y-scroll py-2"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "var(--sidebar-border) transparent",
+        }}
+      >
         <nav className="px-2 space-y-0.5">
           {NAV_ITEMS.map((item, i) => (
             <NavItemComponent
@@ -897,6 +927,8 @@ function PageContent({
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [editStudentId, setEditStudentId] = useState<string | undefined>();
+
+  const { data: myTeacherId } = useMyTeacherId();
   const [editEmployeeId, setEditEmployeeId] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -910,6 +942,11 @@ export default function App() {
     setCurrentPage(page);
     setMobileMenuOpen(false);
   };
+
+  // Show Teacher Portal for teachers
+  if (myTeacherId !== null && myTeacherId !== undefined) {
+    return <TeacherPortalPage />;
+  }
 
   return (
     <div className="flex min-h-screen bg-background">

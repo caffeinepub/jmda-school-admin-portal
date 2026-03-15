@@ -101,11 +101,16 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getClass(id: ClassId): Promise<ClassView | null>;
     getFeePaymentsByStudent(studentId: StudentId): Promise<Array<FeePayment>>;
+    getMyClass(): Promise<ClassView | null>;
+    getMyStudents(): Promise<Array<Student>>;
+    getMyTeacherId(): Promise<TeacherId | null>;
     getSchoolStats(): Promise<SchoolStats>;
     getStudent(id: StudentId): Promise<Student | null>;
     getTeacher(id: TeacherId): Promise<Teacher | null>;
+    getTeacherByPrincipal(principal: Principal): Promise<Teacher | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    linkTeacherLogin(principal: Principal, teacherId: bigint): Promise<void>;
     removeStudentFromClass(classId: ClassId, studentId: StudentId): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     updateClass(id: ClassId, name: string, gradeLevel: bigint, teacherId: TeacherId): Promise<void>;

@@ -1,3 +1,4 @@
+import type { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   Announcement,
@@ -6,6 +7,7 @@ import type {
   SchoolStats,
   Student,
   Teacher,
+  TeacherId,
 } from "../backend.d";
 import { UserRole } from "../backend.d";
 import { useActor } from "./useActor";
@@ -22,6 +24,9 @@ export const QUERY_KEYS = {
   feePayments: ["feePayments"] as const,
   feePaymentsByStudent: (id: bigint) =>
     ["feePayments", "student", id.toString()] as const,
+  myTeacherId: ["myTeacherId"] as const,
+  myStudents: ["myStudents"] as const,
+  myClass: ["myClass"] as const,
 };
 
 // ── Read Queries ─────────────────────────────────────────────────────────────
@@ -156,6 +161,73 @@ export function useFeePaymentsByStudent(studentId: bigint | null) {
     enabled: !!actor && !isFetching && !!studentId,
     placeholderData: (prev) => prev,
     staleTime: 10_000,
+  });
+}
+
+// ── Teacher Portal Queries ───────────────────────────────────────────────────
+export function useMyTeacherId() {
+  const { actor, isFetching } = useActor();
+  return useQuery<TeacherId | null>({
+    queryKey: QUERY_KEYS.myTeacherId,
+    queryFn: async () => {
+      if (!actor) return null;
+      try {
+        return await actor.getMyTeacherId();
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 30_000,
+  });
+}
+
+export function useMyStudents() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Student[]>({
+    queryKey: QUERY_KEYS.myStudents,
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await actor.getMyStudents();
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor && !isFetching,
+    placeholderData: (prev) => prev,
+    staleTime: 10_000,
+  });
+}
+
+export function useMyClass() {
+  const { actor, isFetching } = useActor();
+  return useQuery<ClassView | null>({
+    queryKey: QUERY_KEYS.myClass,
+    queryFn: async () => {
+      if (!actor) return null;
+      try {
+        return await actor.getMyClass();
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 10_000,
+  });
+}
+
+export function useLinkTeacherLogin() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { principal: Principal; teacherId: bigint }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.linkTeacherLogin(data.principal, data.teacherId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.teachers });
+    },
   });
 }
 

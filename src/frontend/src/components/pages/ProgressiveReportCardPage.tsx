@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -9,6 +10,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Printer, Star } from "lucide-react";
+
+function cleanField(val: string | undefined | null): string {
+  if (!val || val.includes("TODO_MIGRATION") || val.trim() === "") return "-";
+  return val;
+}
 import { useMemo, useState } from "react";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { useClasses, useStudents } from "../../hooks/useQueries";
@@ -85,6 +91,7 @@ export default function ProgressiveReportCardPage() {
   const [reportExtras, setReportExtras] = useLocalStorage<
     Record<string, ReportExtras>
   >("jmda_report_extras", {});
+  const [udise, setUdise] = useLocalStorage<string>("jmda_udise", "");
 
   const [classFilter, setClassFilter] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -238,7 +245,6 @@ export default function ProgressiveReportCardPage() {
         t.marks[selectedStudent.id.toString()] ?? 0,
       );
     }
-    // Return rows aligned with subjects, or all subjects with zero
     const refSubjects =
       subjects.length > 0
         ? subjects.map((s) => s.name)
@@ -358,6 +364,15 @@ export default function ProgressiveReportCardPage() {
     year: "numeric",
   });
 
+  const udiseDisplay = udise?.trim() ? `UDISE: ${udise.trim()}` : "UDISE: --";
+
+  // Ordinal suffix helper
+  function ordinal(n: number): string {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
   // Vertical header cell helper
   const VertHeader = ({ label }: { label: string }) => (
     <th
@@ -405,9 +420,20 @@ export default function ProgressiveReportCardPage() {
       </div>
 
       <div
-        className="no-print flex flex-wrap gap-4"
+        className="no-print flex flex-wrap gap-4 items-end"
         data-ocid="progressive-report-card.panel"
       >
+        {/* UDISE Number input */}
+        <div>
+          <Label className="text-xs">UDISE Number</Label>
+          <Input
+            className="w-44 text-sm"
+            placeholder="e.g. 27140705418"
+            value={udise}
+            onChange={(e) => setUdise(e.target.value)}
+            data-ocid="progressive-report-card.input"
+          />
+        </div>
         <div>
           <Label className="text-xs">Session</Label>
           <Select value={session} onValueChange={setSession}>
@@ -571,80 +597,127 @@ export default function ProgressiveReportCardPage() {
       {selectedStudent && (
         <div className="bg-white text-black text-xs max-w-5xl mx-auto border border-gray-400 print:border-0 print:shadow-none shadow-sm">
           <div className="p-5">
-            {/* Header */}
+            {/* ── HEADER ── */}
             <div className="text-center pb-3 mb-3 border-b-2 border-black">
-              <h1 className="text-base font-bold uppercase tracking-wide">
+              <h1 className="text-lg font-extrabold uppercase tracking-widest text-black">
                 JMDA SCHOOL
               </h1>
-              <p className="text-[10px] text-gray-500">India</p>
-              <p className="text-[10px]">Session: {session}</p>
-              <h2 className="text-sm font-bold text-blue-700 mt-0.5">
+              <p className="text-[10px] text-gray-600 mt-0.5">
+                {udiseDisplay}&nbsp;&nbsp;|&nbsp;&nbsp;India
+              </p>
+              <h2 className="text-sm font-bold text-blue-700 mt-1 uppercase tracking-wide">
                 Student Report Card
               </h2>
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                Session: {session}
+              </p>
             </div>
 
-            {/* Student Info */}
+            {/* ── STUDENT INFO BOX ── */}
             <div className="border border-gray-400 mb-3">
-              <div className="grid grid-cols-[72px_1fr_1fr_110px] gap-0">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "80px 1fr 1fr 120px",
+                  gap: 0,
+                }}
+              >
                 {/* Photo */}
-                <div className="border-r border-gray-300 flex items-center justify-center bg-gray-50 m-1">
-                  <div className="w-16 h-16 border border-gray-300 flex items-center justify-center text-gray-400 text-[9px] text-center">
-                    Photo
-                  </div>
+                <div className="border-r border-gray-400 flex items-center justify-center p-1 bg-gray-50">
+                  {ext?.picture && ext.picture.trim() !== "" ? (
+                    <img
+                      src={ext.picture}
+                      alt={selectedStudent.name}
+                      className="w-16 h-20 object-cover border border-gray-300"
+                    />
+                  ) : (
+                    <div className="w-16 h-20 border border-gray-300 flex items-center justify-center text-gray-400 text-[9px] text-center leading-tight">
+                      PHOTO
+                    </div>
+                  )}
                 </div>
-                {/* Middle-left */}
-                <div className="border-r border-gray-300 p-2 space-y-1">
-                  <div>
-                    <span className="font-bold">REGISTRATION</span>
-                    <span className="ml-2">
-                      {selectedStudent.registrationNo || "—"}
+
+                {/* Middle-left: Registration, Name, Class */}
+                <div className="border-r border-gray-400 p-2 space-y-1.5">
+                  <div className="flex gap-1">
+                    <span className="font-bold uppercase text-[10px] whitespace-nowrap">
+                      REGISTRATION
+                    </span>
+                    <span className="text-[10px] ml-1">
+                      {cleanField(selectedStudent.registrationNo)}
                     </span>
                   </div>
-                  <div>
-                    <span className="font-bold">NAME</span>
-                    <span className="ml-2 font-semibold">
+                  <div className="flex gap-1">
+                    <span className="font-bold uppercase text-[10px] whitespace-nowrap">
+                      NAME
+                    </span>
+                    <span className="text-[10px] ml-1 font-semibold">
                       {selectedStudent.name}
                     </span>
                   </div>
-                  <div>
-                    <span className="font-bold">CLASS</span>
-                    <span className="ml-2">{selectedStudent.className}</span>
+                  <div className="flex gap-1">
+                    <span className="font-bold uppercase text-[10px] whitespace-nowrap">
+                      CLASS
+                    </span>
+                    <span className="text-[10px] ml-1">
+                      {selectedStudent.className}
+                    </span>
                   </div>
                 </div>
-                {/* Middle-right */}
-                <div className="border-r border-gray-300 p-2 space-y-1">
-                  <div>
-                    <span className="font-bold">DATE OF BIRTH</span>
-                    <span className="ml-2">{ext?.dateOfBirth || "—"}</span>
+
+                {/* Middle-right: DOB, Gender, Admission Date */}
+                <div className="border-r border-gray-400 p-2 space-y-1.5">
+                  <div className="flex gap-1">
+                    <span className="font-bold uppercase text-[10px] whitespace-nowrap">
+                      DATE OF BIRTH
+                    </span>
+                    <span className="text-[10px] ml-1">
+                      {cleanField(ext?.dateOfBirth)}
+                    </span>
                   </div>
-                  <div>
-                    <span className="font-bold">GENDER</span>
-                    <span className="ml-2">{ext?.gender || "—"}</span>
+                  <div className="flex gap-1">
+                    <span className="font-bold uppercase text-[10px] whitespace-nowrap">
+                      GENDER
+                    </span>
+                    <span className="text-[10px] ml-1 capitalize">
+                      {cleanField(ext?.gender)}
+                    </span>
                   </div>
-                  <div>
-                    <span className="font-bold">ADMISSION DATE</span>
-                    <span className="ml-2">{ext?.dateOfAdmission || "—"}</span>
+                  <div className="flex gap-1">
+                    <span className="font-bold uppercase text-[10px] whitespace-nowrap">
+                      ADMISSION DATE
+                    </span>
+                    <span className="text-[10px] ml-1">
+                      {cleanField(ext?.dateOfAdmission)}
+                    </span>
                   </div>
                 </div>
-                {/* Attendance */}
-                <div className="p-2 space-y-1">
+
+                {/* Right: Attendance%, Leaves, Absents */}
+                <div className="p-2 space-y-1.5">
                   <div>
-                    <span className="font-bold">ATTENDANCE</span>
-                    <span className="ml-1">
+                    <span className="font-bold uppercase text-[10px] block">
+                      ATTENDANCE
+                    </span>
+                    <span className="text-[10px] font-semibold">
                       {attendanceStats?.pct !== null && attendanceStats
                         ? `${attendanceStats.pct}%`
                         : "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="font-bold">LEAVES</span>
-                    <span className="ml-1">
+                    <span className="font-bold uppercase text-[10px] block">
+                      LEAVES
+                    </span>
+                    <span className="text-[10px]">
                       {attendanceStats ? attendanceStats.leaves : "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="font-bold">ABSENTS</span>
-                    <span className="ml-1">
+                    <span className="font-bold uppercase text-[10px] block">
+                      ABSENTS
+                    </span>
+                    <span className="text-[10px]">
                       {attendanceStats ? attendanceStats.absent : "—"}
                     </span>
                   </div>
@@ -652,10 +725,10 @@ export default function ProgressiveReportCardPage() {
               </div>
             </div>
 
-            {/* Cognitive Domain - Examination */}
+            {/* ── COGNITIVE DOMAIN – EXAMINATION ── */}
             <div className="border border-gray-400 mb-3">
-              <div className="bg-gray-100 border-b border-gray-400 px-2 py-1 font-bold text-[11px]">
-                🎓 COGNITIVE DOMAIN – EXAMINATION
+              <div className="bg-gray-200 border-b border-gray-400 px-2 py-1 font-bold text-[11px] uppercase tracking-wide">
+                COGNITIVE DOMAIN EXAMINATION
               </div>
               {subjects.length === 0 ? (
                 <div className="p-4 text-center text-[11px] text-gray-400">
@@ -666,8 +739,8 @@ export default function ProgressiveReportCardPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-[10px]">
                     <thead>
-                      <tr className="border-b border-gray-400">
-                        <th className="border-r border-gray-300 px-1 py-1 text-left font-semibold w-32">
+                      <tr className="border-b border-gray-400 bg-gray-100">
+                        <th className="border-r border-gray-300 px-1 py-1 text-left font-bold w-32 text-[10px]">
                           EXAMINATIONS
                         </th>
                         {subjects.map((s) => (
@@ -680,7 +753,7 @@ export default function ProgressiveReportCardPage() {
                         <VertHeader label="TOTAL MARKS" />
                         <VertHeader label="PERCENTAGE" />
                         <VertHeader label="GRADE" />
-                        <th className="px-1 py-1 text-center font-semibold align-bottom">
+                        <th className="px-1 py-1 text-center font-bold align-bottom text-[10px]">
                           STATUS
                         </th>
                       </tr>
@@ -722,87 +795,99 @@ export default function ProgressiveReportCardPage() {
                         </tr>
                       ))}
 
-                      {/* Overall performance */}
+                      {/* OVER ALL PERFORMANCE row */}
                       {overallPerf && (
-                        <tr className="border-b border-gray-400 bg-blue-50">
-                          <td className="border-r border-gray-300 px-1 py-1 font-bold text-blue-700">
+                        <tr className="border-b border-gray-400 bg-blue-100">
+                          <td className="border-r border-gray-300 px-1 py-1 font-bold text-blue-800 uppercase">
                             OVER ALL PERFORMANCE
                           </td>
                           {subjects.map((s) => (
                             <td
                               key={s.name}
-                              className="border-r border-gray-300 px-1 py-1 text-center font-semibold text-blue-700"
+                              className="border-r border-gray-300 px-1 py-1 text-center font-semibold text-blue-800"
                             >
                               {overallPerf.marksPerSubject[s.name]?.obtained ??
                                 "—"}
                             </td>
                           ))}
-                          <td className="border-r border-gray-300 px-1 py-1 text-center font-bold text-blue-700">
+                          <td className="border-r border-gray-300 px-1 py-1 text-center font-bold text-blue-800">
                             {overallPerf.totalObtained}
                           </td>
-                          <td className="border-r border-gray-300 px-1 py-1 text-center text-blue-700">
+                          <td className="border-r border-gray-300 px-1 py-1 text-center text-blue-800">
                             {overallPerf.totalMax}
                           </td>
-                          <td className="border-r border-gray-300 px-1 py-1 text-center text-blue-700">
+                          <td className="border-r border-gray-300 px-1 py-1 text-center font-bold text-blue-800">
                             {overallPerf.pct}%
                           </td>
-                          <td className="border-r border-gray-300 px-1 py-1 text-center font-bold text-blue-700">
+                          <td className="border-r border-gray-300 px-1 py-1 text-center font-bold text-blue-800">
                             {overallPerf.grade}
                           </td>
-                          <td className="px-1 py-1 text-center font-bold text-blue-700">
+                          <td className="px-1 py-1 text-center font-bold text-blue-800">
                             {overallPerf.status}
                           </td>
                         </tr>
                       )}
 
-                      {/* Subject Wise Performance header */}
+                      {/* SUBJECT WISE PERFORMANCE — label row with rank numbers */}
                       <tr className="border-b border-gray-300 bg-gray-50">
-                        <td className="border-r border-gray-300 px-1 py-1 font-bold">
+                        <td className="border-r border-gray-300 px-1 py-1 font-bold text-[10px] uppercase">
                           SUBJECT WISE PERFORMANCE
                         </td>
-                        {subjects.map((s) => (
+                        {subjects.map((_s, i) => (
                           <td
-                            key={s.name}
-                            className="border-r border-gray-300 px-1 py-1 text-center text-gray-400"
+                            key={_s.name}
+                            className="border-r border-gray-300 px-1 py-1 text-center font-semibold"
                           >
-                            ↓
+                            {i + 1}
                           </td>
                         ))}
-                        {/* Summary cell spans remaining columns with 4 rows */}
+                        {/* Summary cell spans remaining 4 cols + 3 trailing cols with rowSpan=5 */}
                         <td
-                          className="border-r border-gray-300 px-2 py-2 align-top"
+                          className="px-2 py-1 align-top border-r border-gray-300"
                           rowSpan={5}
+                          colSpan={4}
                         >
                           {overallPerf && (
-                            <div className="space-y-1">
-                              <div className="font-semibold">TOTAL SCORE</div>
+                            <div className="space-y-0.5">
+                              <div className="font-bold text-[10px] uppercase">
+                                TOTAL SCORE
+                              </div>
                               <div className="text-sm font-bold">
-                                {overallPerf.totalObtained} /{" "}
+                                {overallPerf.totalObtained}/
                                 {overallPerf.totalMax}
                               </div>
-                              <div className="font-semibold mt-1">
+                              <div className="font-bold text-[10px] uppercase mt-1">
+                                TOTAL MARKS
+                              </div>
+                              <div className="font-semibold">
+                                {overallPerf.totalMax}
+                              </div>
+                              <div className="font-bold text-[10px] uppercase mt-1">
                                 PERCENTAGE
                               </div>
-                              <div className="text-sm font-bold">
+                              <div className="font-bold">
                                 {overallPerf.pct}%
                               </div>
-                              <div className="font-semibold mt-1">GRADE</div>
-                              <div className="text-sm font-bold">
+                              <div className="font-bold text-[10px] uppercase mt-1">
+                                GRADE
+                              </div>
+                              <div className="font-bold">
                                 {overallPerf.grade}
                               </div>
-                              <div className="font-semibold mt-1">STATUS</div>
-                              <div className="text-sm font-bold text-green-700">
+                              <div className="font-bold text-[10px] uppercase mt-1">
+                                STATUS
+                              </div>
+                              <div className="font-bold text-green-700">
                                 {overallPerf.status}
                               </div>
                             </div>
                           )}
                         </td>
-                        <td colSpan={3} className="px-1 py-1" />
                       </tr>
 
-                      {/* Subject Total Marks */}
+                      {/* TOTAL MARKS per subject */}
                       <tr className="border-b border-gray-300">
-                        <td className="border-r border-gray-300 px-1 py-1">
+                        <td className="border-r border-gray-300 px-1 py-1 font-semibold text-[10px] uppercase">
                           TOTAL MARKS
                         </td>
                         {subjects.map((s) => {
@@ -816,12 +901,11 @@ export default function ProgressiveReportCardPage() {
                             </td>
                           );
                         })}
-                        <td colSpan={3} />
                       </tr>
 
-                      {/* Subject Percentage */}
+                      {/* PERCENTAGE per subject */}
                       <tr className="border-b border-gray-300">
-                        <td className="border-r border-gray-300 px-1 py-1">
+                        <td className="border-r border-gray-300 px-1 py-1 font-semibold text-[10px] uppercase">
                           PERCENTAGE
                         </td>
                         {subjects.map((s) => {
@@ -839,12 +923,11 @@ export default function ProgressiveReportCardPage() {
                             </td>
                           );
                         })}
-                        <td colSpan={3} />
                       </tr>
 
-                      {/* Subject Grade */}
+                      {/* GRADE per subject */}
                       <tr className="border-b border-gray-300">
-                        <td className="border-r border-gray-300 px-1 py-1">
+                        <td className="border-r border-gray-300 px-1 py-1 font-semibold text-[10px] uppercase">
                           GRADE
                         </td>
                         {subjects.map((s) => {
@@ -862,12 +945,11 @@ export default function ProgressiveReportCardPage() {
                             </td>
                           );
                         })}
-                        <td colSpan={3} />
                       </tr>
 
-                      {/* Subject Status */}
+                      {/* STATUS per subject */}
                       <tr className="border-b border-gray-400">
-                        <td className="border-r border-gray-300 px-1 py-1">
+                        <td className="border-r border-gray-300 px-1 py-1 font-semibold text-[10px] uppercase">
                           STATUS
                         </td>
                         {subjects.map((s) => {
@@ -879,20 +961,19 @@ export default function ProgressiveReportCardPage() {
                           return (
                             <td
                               key={s.name}
-                              className="border-r border-gray-300 px-1 py-1 text-center font-bold"
+                              className="border-r border-gray-300 px-1 py-1 text-center font-bold text-[9px]"
                             >
                               {sm ? getStatus(pct) : "—"}
                             </td>
                           );
                         })}
-                        <td colSpan={3} />
                       </tr>
 
-                      {/* Class Comparison */}
+                      {/* COMPARISON WITH CLASS */}
                       {classComparison && (
-                        <tr>
+                        <tr className="bg-gray-50 border-t border-gray-400">
                           <td
-                            className="border-r border-gray-300 px-1 py-1 font-bold"
+                            className="border-r border-gray-300 px-1 py-1 font-bold text-[10px] uppercase"
                             colSpan={1}
                           >
                             COMPARISON
@@ -900,8 +981,11 @@ export default function ProgressiveReportCardPage() {
                             WITH CLASS
                           </td>
                           <td
-                            className="border-r border-gray-300 px-1 py-1"
-                            colSpan={2}
+                            className="border-r border-gray-300 px-1 py-1 text-[10px]"
+                            colSpan={Math.max(
+                              1,
+                              Math.ceil(subjects.length / 4),
+                            )}
                           >
                             <div className="font-semibold">CLASS STRENGTH</div>
                             <div className="font-bold">
@@ -909,33 +993,52 @@ export default function ProgressiveReportCardPage() {
                             </div>
                           </td>
                           <td
-                            className="border-r border-gray-300 px-1 py-1"
-                            colSpan={Math.max(1, subjects.length - 2)}
+                            className="border-r border-gray-300 px-1 py-1 text-[10px]"
+                            colSpan={Math.max(
+                              1,
+                              Math.ceil(subjects.length / 4),
+                            )}
                           >
-                            <div>CLASS AVERAGE</div>
+                            <div className="font-semibold">CLASS AVERAGE</div>
                             <div className="font-bold">
                               {classComparison.avg}%
                             </div>
                           </td>
                           <td
-                            className="border-r border-gray-300 px-1 py-1"
-                            colSpan={2}
+                            className="border-r border-gray-300 px-1 py-1 text-[10px]"
+                            colSpan={Math.max(
+                              1,
+                              Math.ceil(subjects.length / 4),
+                            )}
                           >
-                            <div>CLASS MAX AVG</div>
+                            <div className="font-semibold">
+                              CLASS MAX AVERAGE
+                            </div>
                             <div className="font-bold">
                               {classComparison.maxPct}%
                             </div>
                           </td>
-                          <td className="border-r border-gray-300 px-1 py-1">
-                            <div>CLASS MIN AVG</div>
+                          <td
+                            className="border-r border-gray-300 px-1 py-1 text-[10px]"
+                            colSpan={Math.max(
+                              1,
+                              subjects.length -
+                                Math.ceil(subjects.length / 4) * 3,
+                            )}
+                          >
+                            <div className="font-semibold">
+                              CLASS MIN AVERAGE
+                            </div>
                             <div className="font-bold">
                               {classComparison.minPct}%
                             </div>
                           </td>
-                          <td className="px-1 py-1" colSpan={3}>
-                            <div>STUDENT POSITION</div>
+                          <td className="px-1 py-1 text-[10px]" colSpan={4}>
+                            <div className="font-semibold">
+                              STUDENT POSITION
+                            </div>
                             <div className="font-bold">
-                              {classComparison.position} out of{" "}
+                              {ordinal(classComparison.position)} out of{" "}
                               {classComparison.strength}
                             </div>
                           </td>
@@ -947,23 +1050,23 @@ export default function ProgressiveReportCardPage() {
               )}
             </div>
 
-            {/* Lower section */}
+            {/* ── LOWER SECTION ── */}
             <div className="grid grid-cols-2 gap-3 mb-3">
-              {/* Class Tests */}
+              {/* Left: COGNITIVE DOMAIN CLASS TESTS */}
               <div className="border border-gray-400">
-                <div className="bg-gray-100 border-b border-gray-400 px-2 py-1 font-bold text-[11px]">
-                  📋 COGNITIVE DOMAIN – CLASS TESTS
+                <div className="bg-gray-200 border-b border-gray-400 px-2 py-1 font-bold text-[10px] uppercase tracking-wide">
+                  COGNITIVE DOMAIN CLASS TESTS
                 </div>
                 <table className="w-full border-collapse text-[10px]">
                   <thead>
-                    <tr className="border-b border-gray-300">
-                      <th className="border-r border-gray-300 px-1 py-1 text-left font-semibold">
+                    <tr className="border-b border-gray-300 bg-gray-100">
+                      <th className="border-r border-gray-300 px-1 py-1 text-left font-semibold text-[10px]">
                         SUBJECTS
                       </th>
                       <VertHeader label="TOTAL TESTS" />
                       <VertHeader label="TOTAL MARKS" />
                       <VertHeader label="OBTAINED" />
-                      <th className="px-1 py-1 text-center font-semibold align-bottom">
+                      <th className="px-1 py-1 text-center font-semibold align-bottom text-[10px]">
                         <div
                           style={{
                             writingMode: "vertical-rl",
@@ -974,7 +1077,7 @@ export default function ProgressiveReportCardPage() {
                             justifyContent: "center",
                           }}
                         >
-                          AVERAGE
+                          AVERAGE(%)
                         </div>
                       </th>
                     </tr>
@@ -1012,28 +1115,32 @@ export default function ProgressiveReportCardPage() {
                         </td>
                       </tr>
                     ))}
-                    <tr className="border-t border-gray-400 bg-gray-50 font-semibold">
-                      <td className="border-r border-gray-300 px-1 py-1">
-                        <div>OVERALL TESTS</div>
-                        <div className="text-sm font-bold">
+                    {/* Footer totals row */}
+                    <tr className="border-t-2 border-gray-400 bg-gray-100 font-semibold">
+                      <td className="border-r border-gray-300 px-1 py-1 text-[9px]">
+                        <div className="font-bold">OVERALL TESTS</div>
+                        <div className="text-base font-extrabold">
                           {classTestTotals.totalTests}
                         </div>
                       </td>
-                      <td className="border-r border-gray-300 px-1 py-1 text-center">
+                      <td className="border-r border-gray-300 px-1 py-1 text-center text-[9px]">
                         <div>OBTAINED</div>
                         <div className="font-bold">
                           {classTestTotals.obtained}
                         </div>
                       </td>
-                      <td className="border-r border-gray-300 px-1 py-1 text-center">
-                        <div>TOTAL</div>
+                      <td className="border-r border-gray-300 px-1 py-1 text-center text-[9px]">
+                        <div>MARKS</div>
                         <div className="font-bold">
                           {classTestTotals.totalMarks}
                         </div>
                       </td>
-                      <td colSpan={2} className="px-1 py-1 text-center">
+                      <td
+                        colSpan={2}
+                        className="px-1 py-1 text-center text-[9px]"
+                      >
                         <div>SCORE</div>
-                        <div className="text-sm font-bold">
+                        <div className="text-sm font-extrabold">
                           {classTestTotals.score}%
                         </div>
                       </td>
@@ -1042,29 +1149,36 @@ export default function ProgressiveReportCardPage() {
                 </table>
               </div>
 
-              {/* Affective + Psychomotor + Comments */}
-              <div className="space-y-2 flex flex-col">
-                <div className="border border-gray-400 grid grid-cols-2 gap-0 divide-x divide-gray-300">
+              {/* Right: Affective + Psychomotor + Comments */}
+              <div className="flex flex-col gap-2">
+                {/* Top row: two domain boxes side by side */}
+                <div className="grid grid-cols-2 border border-gray-400 divide-x divide-gray-400">
+                  {/* Affective */}
                   <div className="p-2">
-                    <div className="font-bold text-[10px] border-b border-gray-300 pb-1 mb-1">
-                      😊 AFFECTIVE DOMAINS
+                    <div className="font-bold text-[10px] border-b border-gray-300 pb-1 mb-1.5 uppercase">
+                      AFFECTIVE DOMAINS
                     </div>
-                    <div className="text-[10px]">OVERALL RATING</div>
+                    <div className="text-[9px] font-semibold mb-0.5">
+                      OVERALL RATING
+                    </div>
                     <StarRating value={extras.affectiveRating} readOnly />
-                    <div className="text-[10px] mt-1">
+                    <div className="text-[9px] mt-1.5">
                       SCORE{" "}
                       <span className="font-bold">
                         {extras.affectiveScore}%
                       </span>
                     </div>
                   </div>
+                  {/* Psychomotor */}
                   <div className="p-2">
-                    <div className="font-bold text-[10px] border-b border-gray-300 pb-1 mb-1">
-                      ⚙️ PSYCHOMOTOR DOMAINS
+                    <div className="font-bold text-[10px] border-b border-gray-300 pb-1 mb-1.5 uppercase">
+                      PSYCHOMOTOR DOMAINS
                     </div>
-                    <div className="text-[10px]">OVERALL RATING</div>
+                    <div className="text-[9px] font-semibold mb-0.5">
+                      OVERALL RATING
+                    </div>
                     <StarRating value={extras.psychomotorRating} readOnly />
-                    <div className="text-[10px] mt-1">
+                    <div className="text-[9px] mt-1.5">
                       SCORE{" "}
                       <span className="font-bold">
                         {extras.psychomotorScore}%
@@ -1072,9 +1186,11 @@ export default function ProgressiveReportCardPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Comments/Observations */}
                 <div className="border border-gray-400 p-2 flex-1">
-                  <div className="font-bold text-[10px] border-b border-gray-300 pb-1 mb-1">
-                    💬 COMMENTS / OBSERVATIONS
+                  <div className="font-bold text-[10px] border-b border-gray-300 pb-1 mb-1 uppercase">
+                    COMMENTS / OBSERVATIONS
                   </div>
                   <div className="text-[10px] whitespace-pre-wrap min-h-[56px]">
                     {extras.comments || " "}
@@ -1097,35 +1213,41 @@ export default function ProgressiveReportCardPage() {
               </div>
             )}
 
-            {/* Footer */}
-            <div className="border-t border-gray-400 pt-3">
+            {/* ── FOOTER ── */}
+            <div className="border-t-2 border-gray-400 pt-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="font-semibold text-[10px]">
+                  <div className="font-bold text-[10px] uppercase">
                     OVERALL RATING
                   </div>
                   <div className="flex items-center gap-1 mt-0.5">
                     <StarRating value={overallRating} readOnly />
                     <span className="text-xs font-bold">{overallRating}/5</span>
                   </div>
-                  <div className="font-semibold text-[10px] mt-1">
+                  <div className="font-bold text-[10px] uppercase mt-2">
                     OVERALL SCORE
                   </div>
-                  <div className="text-base font-bold">
+                  <div className="text-lg font-extrabold">
                     {overallPerf ? `${overallPerf.pct}%` : "—"}
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs font-semibold">{today}</div>
-                  <div className="text-[9px] text-gray-500 mt-1">DATE</div>
+                  <div className="text-[9px] text-gray-500 mt-0.5 uppercase tracking-wide">
+                    DATE
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="border-b border-gray-400 h-8 w-32" />
-                  <div className="text-[9px] text-gray-500 mt-1">SIGNATURE</div>
+                  <div className="border-b border-gray-500 h-10 w-36" />
+                  <div className="text-[9px] text-gray-500 mt-0.5 uppercase tracking-wide">
+                    SIGNATURE
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="border border-gray-300 h-8 w-24" />
-                  <div className="text-[9px] text-gray-500 mt-1">STAMP</div>
+                  <div className="border border-gray-400 h-10 w-28" />
+                  <div className="text-[9px] text-gray-500 mt-0.5 uppercase tracking-wide">
+                    STAMP
+                  </div>
                 </div>
               </div>
             </div>

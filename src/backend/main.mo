@@ -10,6 +10,8 @@ import Text "mo:core/Text";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+
+
 actor {
   // Types
   public type StudentId = Nat;
@@ -115,8 +117,20 @@ actor {
   let feePayments = Map.empty<FeePaymentId, FeePayment>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
+  var teacherPrincipalLinks = Map.empty<Principal, TeacherId>();
+
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  // Helper function to check if caller is a linked teacher
+  func isTeacher(caller : Principal) : Bool {
+    teacherPrincipalLinks.containsKey(caller);
+  };
+
+  // Helper function to check if caller is teacher or admin
+  func isTeacherOrAdmin(caller : Principal) : Bool {
+    AccessControl.isAdmin(accessControlState, caller) or isTeacher(caller);
+  };
 
   // Claim Admin logic
   public shared ({ caller }) func claimAdmin() : async Bool {
@@ -298,7 +312,11 @@ actor {
   };
 
   // Class CRUD
-  public shared ({ caller }) func createClass(name : Text, gradeLevel : Nat, teacherId : TeacherId) : async ClassId {
+  public shared ({ caller }) func createClass(
+    name : Text,
+    gradeLevel : Nat,
+    teacherId : TeacherId,
+  ) : async ClassId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can create classes");
     };
@@ -327,7 +345,12 @@ actor {
     };
   };
 
-  public shared ({ caller }) func updateClass(id : ClassId, name : Text, gradeLevel : Nat, teacherId : TeacherId) : async () {
+  public shared ({ caller }) func updateClass(
+    id : ClassId,
+    name : Text,
+    gradeLevel : Nat,
+    teacherId : TeacherId,
+  ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update classes");
     };
@@ -364,7 +387,10 @@ actor {
   };
 
   // Class enrollment
-  public shared ({ caller }) func addStudentToClass(classId : ClassId, studentId : StudentId) : async () {
+  public shared ({ caller }) func addStudentToClass(
+    classId : ClassId,
+    studentId : StudentId,
+  ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can modify class enrollment");
     };
@@ -382,7 +408,10 @@ actor {
     };
   };
 
-  public shared ({ caller }) func removeStudentFromClass(classId : ClassId, studentId : StudentId) : async () {
+  public shared ({ caller }) func removeStudentFromClass(
+    classId : ClassId,
+    studentId : StudentId,
+  ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can modify class enrollment");
     };
@@ -395,7 +424,10 @@ actor {
   };
 
   // Announcement CRUD
-  public shared ({ caller }) func createAnnouncement(title : Text, message : Text) : async AnnouncementId {
+  public shared ({ caller }) func createAnnouncement(
+    title : Text,
+    message : Text,
+  ) : async AnnouncementId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can create announcements");
     };
@@ -492,9 +524,8 @@ actor {
   };
 
   public query ({ caller }) func getFeePaymentsByStudent(studentId : StudentId) : async [FeePayment] {
-    // Admin required.
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Only admins can fetch student fee payments");
+      Runtime.trap("Unauthorized: Only admins can fetch student fee payments");
     };
     feePayments.values().toArray().filter(
       func(fp) { fp.studentId == studentId }
@@ -502,9 +533,8 @@ actor {
   };
 
   public query ({ caller }) func getAllFeePayments() : async [FeePayment] {
-    // Admin required.
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Only admins can fetch all fee payments");
+      Runtime.trap("Unauthorized: Only admins can fetch all fee payments");
     };
     feePayments.values().toArray();
   };
@@ -521,7 +551,6 @@ actor {
 
   // Dashboard stats
   public query ({ caller }) func getSchoolStats() : async SchoolStats {
-    // No access check needed -- public read
     let studentCount = students.size();
     let teacherCount = teachers.size();
     let classCount = classes.size();
@@ -538,6 +567,84 @@ actor {
       classCount;
       announcementCount;
       totalFeeCollected;
+    };
+  };
+
+  // Teacher Portal Additions
+
+  public shared ({ caller }) func linkTeacherLogin(principal : Principal, teacherId : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can link teacher logins");
+    };
+
+    if (not teachers.containsKey(teacherId)) {
+      Runtime.trap("Teacher not found");
+    };
+
+    teacherPrincipalLinks.add(principal, teacherId);
+    accessControlState.userRoles.add(principal, #user);
+  };
+
+  public query ({ caller }) func getMyTeacherId() : async ?TeacherId {
+    teacherPrincipalLinks.get(caller);
+  };
+
+  public query ({ caller }) func getTeacherByPrincipal(principal : Principal) : async ?Teacher {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can look up teachers by principal");
+    };
+    switch (teacherPrincipalLinks.get(principal)) {
+      case (null) { null };
+      case (?tid) { teachers.get(tid) };
+    };
+  };
+
+  public query ({ caller }) func getMyStudents() : async [Student] {
+    if (not isTeacherOrAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only teachers and admins can access this");
+    };
+
+    switch (teacherPrincipalLinks.get(caller)) {
+      case (null) { [] };
+      case (?teacherId) {
+        let classForTeacher = classes.values().find(
+          func(classRec) { classRec.teacherId == teacherId }
+        );
+        switch (classForTeacher) {
+          case (null) { [] };
+          case (?classRec) {
+            let studentIds = classRec.studentIds.values().toArray();
+            let studentsForClass = studentIds.map(
+              func(id) {
+                switch (students.get(id)) {
+                  case (null) { Runtime.trap("Student not found") };
+                  case (?student) { student };
+                };
+              }
+            );
+            studentsForClass;
+          };
+        };
+      };
+    };
+  };
+
+  public query ({ caller }) func getMyClass() : async ?ClassView {
+    if (not isTeacherOrAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only teachers and admins can access this");
+    };
+
+    switch (teacherPrincipalLinks.get(caller)) {
+      case (null) { null };
+      case (?teacherId) {
+        let classForTeacher = classes.values().find(
+          func(classRec) { classRec.teacherId == teacherId }
+        );
+        switch (classForTeacher) {
+          case (null) { null };
+          case (?classRec) { ?toClassView(classRec) };
+        };
+      };
     };
   };
 };

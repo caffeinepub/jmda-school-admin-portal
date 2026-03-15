@@ -81,6 +81,19 @@
     --sidebar-ring: 0.72 0.18 158;
 
     /* Custom */
+    /* Teacher Portal */
+    --teacher-bg: oklch(0.14 0.018 255);
+    --teacher-card-bg: oklch(0.18 0.022 255);
+    --teacher-sidebar-bg: oklch(0.11 0.028 160);
+    --teacher-sidebar-fg: oklch(0.9 0.01 160);
+    --teacher-muted: oklch(0.55 0.02 160);
+    --teacher-border: oklch(0.26 0.04 160);
+    --teacher-primary: oklch(0.72 0.2 160);
+    --teacher-primary-dark: oklch(0.58 0.22 160);
+    --teacher-primary-light: oklch(0.72 0.2 160 / 0.12);
+    --teacher-nav-active-bg: oklch(0.72 0.2 160 / 0.15);
+    --teacher-success-light: 0.72 0.18 158 / 0.12;
+
     --success: 0.72 0.18 158;
     --warning: 0.78 0.17 60;
     --info: 0.65 0.15 220;

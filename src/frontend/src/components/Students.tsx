@@ -398,7 +398,9 @@ export default function Students() {
                       {student.className}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                      {student.guardianName}
+                      {student.guardianName?.includes("TODO_MIGRATION")
+                        ? "-"
+                        : student.guardianName || "-"}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <Badge

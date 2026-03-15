@@ -18,6 +18,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Printer } from "lucide-react";
+
+function cleanField(val: string | undefined | null): string {
+  if (!val || val.includes("TODO_MIGRATION") || val.trim() === "") return "-";
+  return val;
+}
 import { useMemo, useState } from "react";
 import { useClasses, useStudents } from "../../hooks/useQueries";
 import { useAttendanceRecords, useExams } from "../../hooks/useSchoolData";
@@ -162,7 +167,7 @@ export default function ReportsStudentCardPage() {
               <div>
                 <span className="text-muted-foreground">Reg No: </span>
                 <span className="font-mono">
-                  {selectedStudent.registrationNo || "-"}
+                  {cleanField(selectedStudent.registrationNo)}
                 </span>
               </div>
               <div>
@@ -173,7 +178,7 @@ export default function ReportsStudentCardPage() {
               </div>
               <div>
                 <span className="text-muted-foreground">Guardian: </span>
-                <span>{selectedStudent.guardianName || "-"}</span>
+                <span>{cleanField(selectedStudent.guardianName)}</span>
               </div>
             </div>
 

@@ -27,6 +27,7 @@ export interface Employee {
   salary: number;
   // kept for backward compat
   department: string;
+  teacherId?: string;
   // Section 2 - Other Information
   fatherHusbandName: string;
   nationalId: string;
@@ -245,4 +246,11 @@ export function useStudentExtended() {
     "jmda_student_extended",
     {},
   );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Returns the employee's teacherId, auto-generating T001, T002 etc if not set */
+export function getEmployeeTeacherId(emp: Employee, index: number): string {
+  return emp.teacherId || `T${String(index + 1).padStart(3, "0")}`;
 }
