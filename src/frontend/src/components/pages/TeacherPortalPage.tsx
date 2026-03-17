@@ -788,9 +788,17 @@ function MyTimetablePage() {
 function MySalaryPage() {
   const { identity } = useInternetIdentity();
   const [employees] = useEmployees();
+  const { data: myTeacherId } = useMyTeacherId();
 
-  // Show first teacher employee or first employee
-  const emp = employees.find((e) => e.role === "Teacher") ?? employees[0];
+  // Find the employee record linked to this teacher's ID
+  const emp = myTeacherId
+    ? (employees.find((e, idx) => {
+        const tid = e.teacherId || `T${String(idx + 1).padStart(3, "0")}`;
+        return tid === String(myTeacherId);
+      }) ??
+      employees.find((e) => e.role === "Teacher") ??
+      employees[0])
+    : (employees.find((e) => e.role === "Teacher") ?? employees[0]);
 
   const handlePrint = () => window.print();
 

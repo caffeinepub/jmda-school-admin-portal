@@ -1,0 +1,239 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Bricolage Grotesque - Display */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Satoshi - Body */
+@font-face {
+  font-family: "Satoshi";
+  src: url("/assets/fonts/Satoshi-Variable.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Geist Mono - Code/Numbers */
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* Deep navy/slate dark theme */
+    --background: 0.14 0.018 255;
+    --foreground: 0.94 0.01 255;
+
+    --card: 0.18 0.022 255;
+    --card-foreground: 0.94 0.01 255;
+
+    --popover: 0.2 0.025 255;
+    --popover-foreground: 0.94 0.01 255;
+
+    /* Emerald green primary */
+    --primary: 0.72 0.18 158;
+    --primary-foreground: 0.1 0.02 158;
+
+    --secondary: 0.22 0.025 255;
+    --secondary-foreground: 0.82 0.015 255;
+
+    --muted: 0.22 0.022 255;
+    --muted-foreground: 0.55 0.02 255;
+
+    --accent: 0.24 0.03 255;
+    --accent-foreground: 0.94 0.01 255;
+
+    --destructive: 0.62 0.22 25;
+    --destructive-foreground: 0.98 0.005 0;
+
+    --border: 0.26 0.025 255;
+    --input: 0.24 0.025 255;
+    --ring: 0.72 0.18 158;
+
+    /* Chart colors */
+    --chart-1: 0.72 0.18 158;
+    --chart-2: 0.65 0.15 200;
+    --chart-3: 0.75 0.16 60;
+    --chart-4: 0.68 0.2 280;
+    --chart-5: 0.62 0.22 25;
+
+    /* Sidebar */
+    --sidebar: 0.12 0.02 255;
+    --sidebar-foreground: 0.85 0.01 255;
+    --sidebar-primary: 0.72 0.18 158;
+    --sidebar-primary-foreground: 0.1 0.02 158;
+    --sidebar-accent: 0.2 0.025 255;
+    --sidebar-accent-foreground: 0.94 0.01 255;
+    --sidebar-border: 0.22 0.025 255;
+    --sidebar-ring: 0.72 0.18 158;
+
+    /* Custom */
+    /* Teacher Portal */
+    --teacher-bg: oklch(0.14 0.018 255);
+    --teacher-card-bg: oklch(0.18 0.022 255);
+    --teacher-sidebar-bg: oklch(0.11 0.028 160);
+    --teacher-sidebar-fg: oklch(0.9 0.01 160);
+    --teacher-muted: oklch(0.55 0.02 160);
+    --teacher-border: oklch(0.26 0.04 160);
+    --teacher-primary: oklch(0.72 0.2 160);
+    --teacher-primary-dark: oklch(0.58 0.22 160);
+    --teacher-primary-light: oklch(0.72 0.2 160 / 0.12);
+    --teacher-nav-active-bg: oklch(0.72 0.2 160 / 0.15);
+    --teacher-success-light: 0.72 0.18 158 / 0.12;
+
+    --success: 0.72 0.18 158;
+    --warning: 0.78 0.17 60;
+    --info: 0.65 0.15 220;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Satoshi", sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .mono {
+    font-family: "Geist Mono", monospace;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: oklch(var(--card) / 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .gradient-text {
+    background: linear-gradient(
+      135deg,
+      oklch(0.72 0.18 158),
+      oklch(0.75 0.15 180)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .sidebar-glow {
+    box-shadow: inset -1px 0 0 oklch(var(--sidebar-border)), 4px 0 24px -4px
+      oklch(0 0 0 / 0.3);
+  }
+
+  .stat-card {
+    background: linear-gradient(
+      135deg,
+      oklch(var(--card)),
+      oklch(0.2 0.025 255 / 0.8)
+    );
+    border: 1px solid oklch(var(--border));
+  }
+
+  .nav-item-active {
+    background: linear-gradient(
+      135deg,
+      oklch(0.72 0.18 158 / 0.15),
+      oklch(0.65 0.15 200 / 0.08)
+    );
+    border-left: 2px solid oklch(0.72 0.18 158);
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      oklch(var(--muted) / 0.3) 0%,
+      oklch(var(--muted) / 0.6) 50%,
+      oklch(var(--muted) / 0.3) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(var(--border)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 5px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: oklch(var(--border));
+    border-radius: 99px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .print-area {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+
+  /* Reset dark theme for print */
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+  }
+
+  th,
+  td {
+    border: 1px solid #ccc !important;
+    padding: 4pt 8pt !important;
+  }
+}

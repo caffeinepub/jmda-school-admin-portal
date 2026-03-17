@@ -41,6 +41,20 @@ export interface Employee {
   homeAddress: string;
 }
 
+export interface EmployeeCredential {
+  employeeId: string;
+  username: string; // auto-generated display ID (T001, EMP001)
+  password: string;
+  active: boolean;
+}
+
+export interface StudentCredential {
+  studentId: string; // student backend ID (bigint as string)
+  username: string; // STU001, STU002
+  password: string;
+  active: boolean;
+}
+
 export interface SalaryRecord {
   id: string;
   employeeId: string;
@@ -139,48 +153,7 @@ export function useSubjects() {
 }
 
 export function useEmployees() {
-  return useLocalStorage<Employee[]>("jmda_employees", [
-    {
-      id: "e1",
-      picture: "",
-      name: "Rajesh Kumar",
-      role: "Principal",
-      department: "Administration",
-      mobile: "9876543210",
-      dateOfJoining: "",
-      salary: 45000,
-      fatherHusbandName: "",
-      nationalId: "",
-      education: "",
-      gender: "",
-      religion: "",
-      bloodGroup: "",
-      experience: "",
-      email: "",
-      dateOfBirth: "",
-      homeAddress: "",
-    },
-    {
-      id: "e2",
-      picture: "",
-      name: "Sunita Sharma",
-      role: "Vice Principal",
-      department: "Administration",
-      mobile: "9876543211",
-      dateOfJoining: "",
-      salary: 38000,
-      fatherHusbandName: "",
-      nationalId: "",
-      education: "",
-      gender: "",
-      religion: "",
-      bloodGroup: "",
-      experience: "",
-      email: "",
-      dateOfBirth: "",
-      homeAddress: "",
-    },
-  ]);
+  return useLocalStorage<Employee[]>("jmda_employees", []);
 }
 
 export function useSalaryRecords() {
@@ -196,49 +169,11 @@ export function useTimetable() {
 }
 
 export function useHomework() {
-  return useLocalStorage<HomeworkItem[]>("jmda_homework", [
-    {
-      id: "h1",
-      className: "Class 5",
-      subject: "Mathematics",
-      title: "Chapter 4 Exercise - Fractions",
-      description: "Complete exercises 4.1 to 4.5 from textbook",
-      dueDate: "2026-03-10",
-    },
-    {
-      id: "h2",
-      className: "Class 3",
-      subject: "English",
-      title: "Write a paragraph about your school",
-      description: "Write 10 sentences describing your school",
-      dueDate: "2026-03-08",
-    },
-  ]);
+  return useLocalStorage<HomeworkItem[]>("jmda_homework", []);
 }
 
 export function useExams() {
-  return useLocalStorage<ExamItem[]>("jmda_exams", [
-    {
-      id: "ex1",
-      name: "Mid-Term Examination 2026",
-      type: "exam",
-      className: "Class 5",
-      subject: "Mathematics",
-      date: "2026-03-15",
-      maxMarks: 100,
-      marks: {},
-    },
-    {
-      id: "ex2",
-      name: "Unit Test 1",
-      type: "class_test",
-      className: "Class 3",
-      subject: "English",
-      date: "2026-03-12",
-      maxMarks: 25,
-      marks: {},
-    },
-  ]);
+  return useLocalStorage<ExamItem[]>("jmda_exams", []);
 }
 
 export function useStudentExtended() {
@@ -248,9 +183,32 @@ export function useStudentExtended() {
   );
 }
 
+export function useEmployeeCredentials() {
+  return useLocalStorage<EmployeeCredential[]>("jmda_employee_credentials", []);
+}
+
+export function useStudentCredentials() {
+  return useLocalStorage<StudentCredential[]>("jmda_student_credentials", []);
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Returns the employee's teacherId, auto-generating T001, T002 etc if not set */
+/** Returns the employee's display ID: T001/T002 for teachers, EMP001/EMP002 for others */
+export function getEmployeeDisplayId(
+  employees: Employee[],
+  emp: Employee,
+): string {
+  if (emp.teacherId) return emp.teacherId;
+  const isTeacher = emp.role === "Teacher";
+  const sameRoleGroup = employees.filter((e) =>
+    isTeacher ? e.role === "Teacher" : e.role !== "Teacher",
+  );
+  const idx = sameRoleGroup.findIndex((e) => e.id === emp.id);
+  const n = String(idx + 1).padStart(3, "0");
+  return isTeacher ? `T${n}` : `EMP${n}`;
+}
+
+/** @deprecated Use getEmployeeDisplayId instead */
 export function getEmployeeTeacherId(emp: Employee, index: number): string {
   return emp.teacherId || `T${String(index + 1).padStart(3, "0")}`;
 }

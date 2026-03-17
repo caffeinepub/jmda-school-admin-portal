@@ -33,6 +33,10 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import StaffDashboardPage from "./components/pages/StaffDashboardPage";
+import StaffLoginPage, {
+  type StaffSession,
+} from "./components/pages/StaffLoginPage";
 import TeacherPortalPage from "./components/pages/TeacherPortalPage";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useIsAdmin, useMyTeacherId } from "./hooks/useQueries";
@@ -82,6 +86,10 @@ import ReportsStudentCardPage from "./components/pages/ReportsStudentCardPage";
 import ReportsStudentInfoPage from "./components/pages/ReportsStudentInfoPage";
 import ReportsStudentMonthlyAttPage from "./components/pages/ReportsStudentMonthlyAttPage";
 import SalaryPage from "./components/pages/SalaryPage";
+import SalaryPaidSlipPage from "./components/pages/SalaryPaidSlipPage";
+import SalaryPayPage from "./components/pages/SalaryPayPage";
+import SalaryReportPage from "./components/pages/SalaryReportPage";
+import SalarySheetPage from "./components/pages/SalarySheetPage";
 import StudentIdCardsPage from "./components/pages/StudentIdCardsPage";
 import StudentsAttendancePage from "./components/pages/StudentsAttendancePage";
 import StudentsAttendanceReportPage from "./components/pages/StudentsAttendanceReportPage";
@@ -124,6 +132,10 @@ export type Page =
   | "fees-delete"
   | "fee-history"
   | "salary"
+  | "salary-pay"
+  | "salary-paid-slip"
+  | "salary-sheet"
+  | "salary-report"
   | "attendance"
   | "timetable"
   | "homework"
@@ -175,7 +187,8 @@ export type Page =
   | "certificates-templates"
   // Manage Login sub-pages
   | "manage-login-students"
-  | "manage-login-employees";
+  | "manage-login-employees"
+  | "staff-login";
 
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
@@ -203,6 +216,10 @@ const PAGE_TITLES: Record<Page, string> = {
   "fees-delete": "Delete Fees",
   "fee-history": "Fee History",
   salary: "Salary",
+  "salary-pay": "Pay Salary",
+  "salary-paid-slip": "Salary Paid Slip",
+  "salary-sheet": "Salary Sheet",
+  "salary-report": "Salary Report",
   attendance: "Attendance",
   timetable: "Timetable",
   homework: "Homework",
@@ -255,6 +272,7 @@ const PAGE_TITLES: Record<Page, string> = {
   // Manage Login sub-pages
   "manage-login-students": "Manage Student Login",
   "manage-login-employees": "Manage Employee Login",
+  "staff-login": "Staff Login",
 };
 
 // ── Nav items ────────────────────────────────────────────────────────────────
@@ -332,7 +350,16 @@ const NAV_ITEMS: NavItem[] = [
       { page: "fees-delete", label: "Delete Fees", icon: Trash2 },
     ],
   },
-  { page: "salary", label: "Salary", icon: Wallet },
+  {
+    label: "Salary",
+    icon: Wallet,
+    children: [
+      { page: "salary-pay", label: "Pay Salary", icon: Wallet },
+      { page: "salary-paid-slip", label: "Salary Paid Slip", icon: Receipt },
+      { page: "salary-sheet", label: "Salary Sheet", icon: FileText },
+      { page: "salary-report", label: "Salary Report", icon: BarChart2 },
+    ],
+  },
   {
     label: "Attendance",
     icon: ClipboardList,
@@ -685,17 +712,29 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
             </Button>
           </div>
         ) : (
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full gap-2 text-xs"
-            onClick={login}
-            disabled={isLoggingIn}
-            data-ocid="sidebar.primary_button"
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            {isLoggingIn ? "Signing in..." : "Sign In"}
-          </Button>
+          <div className="space-y-1">
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full gap-2 text-xs"
+              onClick={login}
+              disabled={isLoggingIn}
+              data-ocid="sidebar.primary_button"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              {isLoggingIn ? "Signing in..." : "Sign In"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full gap-2 text-xs text-muted-foreground"
+              onClick={() => onNavigate("staff-login")}
+              data-ocid="sidebar.staff_login_button"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Staff / Student Login
+            </Button>
+          </div>
         )}
       </div>
     </aside>
@@ -770,7 +809,14 @@ function PageContent({
     case "fee-history":
       return <FeeHistoryPage />;
     case "salary":
-      return <SalaryPage />;
+    case "salary-pay":
+      return <SalaryPayPage />;
+    case "salary-paid-slip":
+      return <SalaryPaidSlipPage />;
+    case "salary-sheet":
+      return <SalarySheetPage />;
+    case "salary-report":
+      return <SalaryReportPage />;
     case "attendance":
       return <AttendancePage />;
     case "attendance-students":
@@ -818,7 +864,7 @@ function PageContent({
     case "exams-blank-award":
       return <ExamsBlankAwardPage />;
     case "class-tests":
-      return <ExamsPage />;
+      return <ClassTestsMarksPage />;
     case "classtests-marks":
       return <ClassTestsMarksPage />;
     case "classtests-result":
@@ -927,10 +973,19 @@ function PageContent({
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [editStudentId, setEditStudentId] = useState<string | undefined>();
+  const [staffSession, setStaffSession] = useState<StaffSession | null>(() => {
+    try {
+      const raw = window.localStorage.getItem("jmda_staff_session");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const { data: myTeacherId } = useMyTeacherId();
   const [editEmployeeId, setEditEmployeeId] = useState<string | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { identity } = useInternetIdentity();
 
   const handleNavigate = (page: Page, params?: Record<string, string>) => {
     if (page === "edit-student" && params?.id) {
@@ -942,6 +997,53 @@ export default function App() {
     setCurrentPage(page);
     setMobileMenuOpen(false);
   };
+
+  // If staff session is active and no II identity, show staff views
+  if (staffSession && !identity) {
+    if (currentPage === "staff-login") {
+      return (
+        <>
+          <StaffLoginPage
+            onLogin={(session) => {
+              setStaffSession(session);
+              setCurrentPage("dashboard");
+            }}
+            onBack={() => setCurrentPage("dashboard")}
+          />
+          <Toaster richColors position="top-right" />
+        </>
+      );
+    }
+    return (
+      <>
+        <StaffDashboardPage
+          session={staffSession}
+          onLogout={() => {
+            window.localStorage.removeItem("jmda_staff_session");
+            setStaffSession(null);
+            setCurrentPage("dashboard");
+          }}
+        />
+        <Toaster richColors position="top-right" />
+      </>
+    );
+  }
+
+  // Show Staff Login page (no session yet)
+  if (currentPage === "staff-login" && !identity) {
+    return (
+      <>
+        <StaffLoginPage
+          onLogin={(session) => {
+            setStaffSession(session);
+            setCurrentPage("dashboard");
+          }}
+          onBack={() => setCurrentPage("dashboard")}
+        />
+        <Toaster richColors position="top-right" />
+      </>
+    );
+  }
 
   // Show Teacher Portal for teachers
   if (myTeacherId !== null && myTeacherId !== undefined) {

@@ -10,11 +10,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronUp, Upload, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Upload,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Page } from "../../App";
-import { type Employee, useEmployees } from "../../hooks/useSchoolData";
+import {
+  type Employee,
+  getEmployeeDisplayId,
+  useEmployeeCredentials,
+  useEmployees,
+} from "../../hooks/useSchoolData";
 
 interface EditEmployeePageProps {
   onNavigate: (page: Page) => void;
@@ -98,10 +111,14 @@ export default function EditEmployeePage({
   editId,
 }: EditEmployeePageProps) {
   const [employees, setEmployees] = useEmployees();
+  const [credentials, setCredentials] = useEmployeeCredentials();
   const [form, setForm] = useState<Omit<Employee, "id">>(EMPTY_FORM);
   const [section1Open, setSection1Open] = useState(true);
   const [section2Open, setSection2Open] = useState(true);
+  const [section3Open, setSection3Open] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [credPassword, setCredPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -110,9 +127,12 @@ export default function EditEmployeePage({
       if (emp) {
         const { id: _id, ...rest } = emp;
         setForm({ ...EMPTY_FORM, ...rest });
+        // Pre-fill password if credentials exist
+        const cred = credentials.find((c) => c.employeeId === editId);
+        if (cred) setCredPassword(cred.password);
       }
     }
-  }, [editId, employees]);
+  }, [editId, employees, credentials]);
 
   const handlePictureChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,22 +175,67 @@ export default function EditEmployeePage({
 
     setSaving(true);
     try {
-      if (editId) {
-        setEmployees((prev) =>
-          prev.map((e) => (e.id === editId ? { ...e, ...form } : e)),
+      const newEmployees = editId
+        ? employees.map((e) => (e.id === editId ? { ...e, ...form } : e))
+        : [...employees, { id: `emp_${Date.now()}`, ...form }];
+
+      // Write directly to localStorage BEFORE updating state (prevents race on navigation)
+      try {
+        window.localStorage.setItem(
+          "jmda_employees",
+          JSON.stringify(newEmployees),
         );
-        toast.success("Employee updated successfully.");
-      } else {
-        setEmployees((prev) => [...prev, { id: `emp_${Date.now()}`, ...form }]);
-        toast.success("Employee added successfully.");
-      }
+      } catch {}
+
+      setEmployees(newEmployees);
+      toast.success(
+        editId
+          ? "Employee updated successfully."
+          : "Employee added successfully.",
+      );
       onNavigate("employees");
     } finally {
       setSaving(false);
     }
   };
 
+  const handleSetCredentials = () => {
+    if (!editId) {
+      toast.error("Save the employee first before setting credentials.");
+      return;
+    }
+    if (!credPassword.trim()) {
+      toast.error("Please enter a password.");
+      return;
+    }
+    const emp = employees.find((e) => e.id === editId);
+    if (!emp) return;
+    const username = getEmployeeDisplayId(employees, emp);
+    const newCredentials = credentials.filter((c) => c.employeeId !== editId);
+    newCredentials.push({
+      employeeId: editId,
+      username,
+      password: credPassword,
+      active: true,
+    });
+    try {
+      window.localStorage.setItem(
+        "jmda_employee_credentials",
+        JSON.stringify(newCredentials),
+      );
+    } catch {}
+    setCredentials(newCredentials);
+    toast.success(`Credentials set! Username: ${username}`);
+  };
+
   const isEdit = !!editId;
+  const currentCred = editId
+    ? credentials.find((c) => c.employeeId === editId)
+    : null;
+  const currentEmp = editId ? employees.find((e) => e.id === editId) : null;
+  const displayId = currentEmp
+    ? getEmployeeDisplayId(employees, currentEmp)
+    : "(save first)";
 
   return (
     <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-4">
@@ -322,7 +387,7 @@ export default function EditEmployeePage({
               {/* Monthly Salary */}
               <div>
                 <Label htmlFor="emp-salary">
-                  Monthly Salary <span className="text-destructive">*</span>
+                  Monthly Salary (₹) <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="emp-salary"
@@ -330,7 +395,7 @@ export default function EditEmployeePage({
                   min={0}
                   value={form.salary || ""}
                   onChange={(e) => set("salary", Number(e.target.value))}
-                  placeholder="0"
+                  placeholder="Monthly salary"
                   data-ocid="edit_employee.salary.input"
                 />
               </div>
@@ -350,31 +415,26 @@ export default function EditEmployeePage({
         {section2Open && (
           <Card>
             <CardContent className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Father/Husband Name */}
               <div>
                 <Label htmlFor="emp-father">Father / Husband Name</Label>
                 <Input
                   id="emp-father"
                   value={form.fatherHusbandName}
                   onChange={(e) => set("fatherHusbandName", e.target.value)}
-                  placeholder="Father or Husband name"
-                  data-ocid="edit_employee.father_husband_name.input"
+                  placeholder="Father or husband name"
+                  data-ocid="edit_employee.father.input"
                 />
               </div>
-
-              {/* National ID */}
               <div>
                 <Label htmlFor="emp-nid">National ID</Label>
                 <Input
                   id="emp-nid"
                   value={form.nationalId}
                   onChange={(e) => set("nationalId", e.target.value)}
-                  placeholder="CNIC / Aadhaar / ID No"
+                  placeholder="National ID number"
                   data-ocid="edit_employee.national_id.input"
                 />
               </div>
-
-              {/* Education */}
               <div>
                 <Label htmlFor="emp-edu">Education</Label>
                 <Input
@@ -385,8 +445,6 @@ export default function EditEmployeePage({
                   data-ocid="edit_employee.education.input"
                 />
               </div>
-
-              {/* Gender */}
               <div>
                 <Label>Gender</Label>
                 <Select
@@ -405,8 +463,6 @@ export default function EditEmployeePage({
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Religion */}
               <div>
                 <Label>Religion</Label>
                 <Select
@@ -425,8 +481,6 @@ export default function EditEmployeePage({
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Blood Group */}
               <div>
                 <Label>Blood Group</Label>
                 <Select
@@ -445,8 +499,6 @@ export default function EditEmployeePage({
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Experience */}
               <div>
                 <Label htmlFor="emp-exp">Experience</Label>
                 <Input
@@ -457,8 +509,6 @@ export default function EditEmployeePage({
                   data-ocid="edit_employee.experience.input"
                 />
               </div>
-
-              {/* Email */}
               <div>
                 <Label htmlFor="emp-email">Email Address</Label>
                 <Input
@@ -466,12 +516,10 @@ export default function EditEmployeePage({
                   type="email"
                   value={form.email}
                   onChange={(e) => set("email", e.target.value)}
-                  placeholder="email@example.com"
+                  placeholder="Email address"
                   data-ocid="edit_employee.email.input"
                 />
               </div>
-
-              {/* Date of Birth */}
               <div>
                 <Label htmlFor="emp-dob">Date of Birth</Label>
                 <Input
@@ -479,20 +527,18 @@ export default function EditEmployeePage({
                   type="date"
                   value={form.dateOfBirth}
                   onChange={(e) => set("dateOfBirth", e.target.value)}
-                  data-ocid="edit_employee.date_of_birth.input"
+                  data-ocid="edit_employee.dob.input"
                 />
               </div>
-
-              {/* Home Address */}
               <div className="sm:col-span-2">
                 <Label htmlFor="emp-address">Home Address</Label>
                 <Textarea
                   id="emp-address"
                   value={form.homeAddress}
                   onChange={(e) => set("homeAddress", e.target.value)}
-                  placeholder="Full home address"
-                  rows={3}
-                  data-ocid="edit_employee.home_address.textarea"
+                  placeholder="Home address"
+                  rows={2}
+                  data-ocid="edit_employee.address.textarea"
                 />
               </div>
             </CardContent>
@@ -500,8 +546,92 @@ export default function EditEmployeePage({
         )}
       </div>
 
-      {/* Save Button */}
-      <div className="flex justify-end gap-3 pb-8">
+      {/* Section 3 - Login Credentials */}
+      <div className="space-y-3">
+        <SectionHeader
+          number={3}
+          title="Login Credentials"
+          open={section3Open}
+          onToggle={() => setSection3Open((v) => !v)}
+        />
+        {section3Open && (
+          <Card>
+            <CardContent className="pt-4 space-y-4">
+              {!isEdit && (
+                <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                  <KeyRound className="inline w-4 h-4 mr-1.5 text-primary" />
+                  Save the employee first, then come back to set login
+                  credentials.
+                </p>
+              )}
+              {isEdit && (
+                <>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border">
+                    <KeyRound className="w-4 h-4 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        Auto-generated Username
+                      </p>
+                      <p className="font-mono font-bold text-lg text-primary">
+                        {displayId}
+                      </p>
+                    </div>
+                    <div>
+                      {currentCred ? (
+                        <span className="text-xs text-emerald-500 font-medium bg-emerald-500/10 px-2 py-1 rounded-full">
+                          ✓ Credentials set
+                        </span>
+                      ) : (
+                        <span className="text-xs text-amber-500 font-medium bg-amber-500/10 px-2 py-1 rounded-full">
+                          No credentials
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="cred-password">Set Password</Label>
+                    <div className="relative mt-1">
+                      <Input
+                        id="cred-password"
+                        type={showPassword ? "text" : "password"}
+                        value={credPassword}
+                        onChange={(e) => setCredPassword(e.target.value)}
+                        placeholder="Enter password for this employee"
+                        className="pr-10"
+                        data-ocid="edit_employee.password.input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSetCredentials}
+                    className="gap-2"
+                    data-ocid="edit_employee.set_credentials.button"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Set Credentials
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Save */}
+      <div className="flex justify-end gap-3 pt-2">
         <Button
           variant="outline"
           onClick={() => onNavigate("employees")}

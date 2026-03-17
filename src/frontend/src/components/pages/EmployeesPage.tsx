@@ -22,7 +22,7 @@ import {
 import { Edit, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { Page } from "../../App";
-import { getEmployeeTeacherId, useEmployees } from "../../hooks/useSchoolData";
+import { getEmployeeDisplayId, useEmployees } from "../../hooks/useSchoolData";
 
 interface EmployeesPageProps {
   onNavigate: (page: Page, params?: Record<string, string>) => void;
@@ -71,7 +71,7 @@ export default function EmployeesPage({ onNavigate }: EmployeesPageProps) {
                 <TableHead>Role</TableHead>
                 <TableHead>Mobile</TableHead>
                 <TableHead>Joining Date</TableHead>
-                <TableHead>Teacher ID</TableHead>
+                <TableHead>Employee ID</TableHead>
                 <TableHead>Salary (₹)</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -108,7 +108,7 @@ export default function EmployeesPage({ onNavigate }: EmployeesPageProps) {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="font-mono text-xs">
-                      {getEmployeeTeacherId(emp, idx)}
+                      {getEmployeeDisplayId(employees, emp)}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
