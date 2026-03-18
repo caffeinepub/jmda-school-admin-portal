@@ -1,3 +1,4 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -26,6 +27,7 @@ import {
   Settings,
   Star,
   Trash2,
+  User,
   UserSquare,
   Users,
   Video,
@@ -33,6 +35,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import AdminProfilePage from "./components/pages/AdminProfilePage";
 import StaffDashboardPage from "./components/pages/StaffDashboardPage";
 import StaffLoginPage, {
   type StaffSession,
@@ -103,8 +106,9 @@ import TimetableForTeacherPage from "./components/pages/TimetableForTeacherPage"
 import TimetablePage from "./components/pages/TimetablePage";
 import TimetablePeriodsPage from "./components/pages/TimetablePeriodsPage";
 import TimetableWeekdaysPage from "./components/pages/TimetableWeekdaysPage";
+import { useAdminProfile } from "./hooks/useSchoolData";
 
-// ── Page types ───────────────────────────────────────────────────────────────
+// ── Page types ─────────────────────────────────────────────────────────────────────
 
 export type Page =
   | "dashboard"
@@ -188,7 +192,8 @@ export type Page =
   // Manage Login sub-pages
   | "manage-login-students"
   | "manage-login-employees"
-  | "staff-login";
+  | "staff-login"
+  | "admin-profile";
 
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
@@ -273,9 +278,10 @@ const PAGE_TITLES: Record<Page, string> = {
   "manage-login-students": "Manage Student Login",
   "manage-login-employees": "Manage Employee Login",
   "staff-login": "Staff Login",
+  "admin-profile": "Admin Profile",
 };
 
-// ── Nav items ────────────────────────────────────────────────────────────────
+// ── Nav items ────────────────────────────────────────────────────────────────────
 
 interface NavItem {
   page?: Page;
@@ -524,7 +530,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// ── Sidebar ──────────────────────────────────────────────────────────────────
+// ── Sidebar ────────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
   currentPage: Page;
@@ -643,6 +649,20 @@ function NavItemComponent({
 function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
   const { identity, login, clear, isLoggingIn } = useInternetIdentity();
   const { data: isAdmin } = useIsAdmin();
+  const [adminProfile] = useAdminProfile();
+
+  const displayName = adminProfile.name || null;
+  const principalShort = identity
+    ? `${identity.getPrincipal().toString().slice(0, 14)}...`
+    : null;
+  const initials = displayName
+    ? displayName
+        .split(" ")
+        .map((w: string) => w[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "A";
 
   return (
     <aside className="w-64 h-full bg-sidebar sidebar-glow flex flex-col min-h-0">
@@ -686,20 +706,35 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
       {/* User */}
       <div className="border-t border-sidebar-border p-3 shrink-0">
         {identity ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-2">
-              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
-                <UserSquare className="w-3.5 h-3.5 text-primary" />
-              </div>
+          <div className="space-y-1.5">
+            {/* Clickable profile area */}
+            <button
+              type="button"
+              onClick={() => onNavigate("admin-profile")}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
+              data-ocid="sidebar.open_modal_button"
+            >
+              <Avatar className="w-7 h-7 shrink-0">
+                {adminProfile.picture ? (
+                  <AvatarImage
+                    src={adminProfile.picture}
+                    alt={displayName ?? "Admin"}
+                  />
+                ) : null}
+                <AvatarFallback className="text-xs bg-primary/20 text-primary font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-sidebar-foreground truncate">
-                  {identity.getPrincipal().toString().slice(0, 14)}...
+                  {displayName ?? principalShort}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
                   {isAdmin ? "Administrator" : "Viewer"}
                 </p>
               </div>
-            </div>
+              <User className="w-3 h-3 text-muted-foreground shrink-0" />
+            </button>
             <Button
               variant="ghost"
               size="sm"
@@ -741,7 +776,7 @@ function AppSidebar({ currentPage, onNavigate }: SidebarProps) {
   );
 }
 
-// ── Page Content ─────────────────────────────────────────────────────────────
+// ── Page Content ────────────────────────────────────────────────────────────────
 
 interface PageNavProps {
   onNavigate: (page: Page, params?: Record<string, string>) => void;
@@ -883,6 +918,8 @@ function PageContent({
       return <ReportsStaffMonthlyAttPage />;
     case "progressive-report-card":
       return <ProgressiveReportCardPage />;
+    case "admin-profile":
+      return <AdminProfilePage />;
     case "general-settings":
       return (
         <ComingSoonPage
@@ -968,7 +1005,7 @@ function PageContent({
   }
 }
 
-// ── App ───────────────────────────────────────────────────────────────────────
+// ── App ────────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
@@ -988,11 +1025,15 @@ export default function App() {
   const { identity } = useInternetIdentity();
 
   const handleNavigate = (page: Page, params?: Record<string, string>) => {
-    if (page === "edit-student" && params?.id) {
-      setEditStudentId(params.id);
+    // Always update editStudentId when navigating to edit-student
+    // Clear it if no id param so "Add New" works correctly
+    if (page === "edit-student") {
+      setEditStudentId(params?.id);
     }
-    if (page === "edit-employee" && params?.id) {
-      setEditEmployeeId(params.id);
+    // Always update editEmployeeId when navigating to edit-employee
+    // CRITICAL: Clear it if no id param so "Add Employee" always creates new
+    if (page === "edit-employee") {
+      setEditEmployeeId(params?.id ?? undefined);
     }
     setCurrentPage(page);
     setMobileMenuOpen(false);
@@ -1097,8 +1138,11 @@ export default function App() {
           </div>
         </div>
 
-        {/* Page */}
-        <div key={currentPage} className="flex-1 animate-fade-in">
+        {/* Page — key ensures fresh mount on every navigation so localStorage is re-read */}
+        <div
+          key={`${currentPage}-${editEmployeeId ?? "new"}-${editStudentId ?? "new"}`}
+          className="flex-1 animate-fade-in"
+        >
           <PageContent
             page={currentPage}
             onNavigate={handleNavigate}

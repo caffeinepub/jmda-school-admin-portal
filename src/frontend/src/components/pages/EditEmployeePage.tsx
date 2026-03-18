@@ -179,14 +179,6 @@ export default function EditEmployeePage({
         ? employees.map((e) => (e.id === editId ? { ...e, ...form } : e))
         : [...employees, { id: `emp_${Date.now()}`, ...form }];
 
-      // Write directly to localStorage BEFORE updating state (prevents race on navigation)
-      try {
-        window.localStorage.setItem(
-          "jmda_employees",
-          JSON.stringify(newEmployees),
-        );
-      } catch {}
-
       setEmployees(newEmployees);
       toast.success(
         editId
@@ -218,12 +210,6 @@ export default function EditEmployeePage({
       password: credPassword,
       active: true,
     });
-    try {
-      window.localStorage.setItem(
-        "jmda_employee_credentials",
-        JSON.stringify(newCredentials),
-      );
-    } catch {}
     setCredentials(newCredentials);
     toast.success(`Credentials set! Username: ${username}`);
   };

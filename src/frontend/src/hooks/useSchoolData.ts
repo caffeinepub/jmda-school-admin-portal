@@ -136,6 +136,16 @@ export interface StudentExtended {
   picture: string;
 }
 
+export interface AdminProfile {
+  name: string;
+  schoolName: string;
+  designation: string;
+  email: string;
+  phone: string;
+  address: string;
+  picture: string;
+}
+
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
 export function useFamilies() {
@@ -189,6 +199,18 @@ export function useEmployeeCredentials() {
 
 export function useStudentCredentials() {
   return useLocalStorage<StudentCredential[]>("jmda_student_credentials", []);
+}
+
+export function useAdminProfile() {
+  return useLocalStorage<AdminProfile>("jmda_admin_profile", {
+    name: "",
+    schoolName: "JMDA School",
+    designation: "Administrator",
+    email: "",
+    phone: "",
+    address: "",
+    picture: "",
+  });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
