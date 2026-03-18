@@ -179,6 +179,14 @@ export default function EditEmployeePage({
         ? employees.map((e) => (e.id === editId ? { ...e, ...form } : e))
         : [...employees, { id: `emp_${Date.now()}`, ...form }];
 
+      // Write directly to localStorage FIRST so EmployeesPage reads fresh data on mount
+      try {
+        window.localStorage.setItem(
+          "jmda_employees",
+          JSON.stringify(newEmployees),
+        );
+      } catch {}
+
       setEmployees(newEmployees);
       toast.success(
         editId

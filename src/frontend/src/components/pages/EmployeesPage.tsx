@@ -32,7 +32,14 @@ export default function EmployeesPage({ onNavigate }: EmployeesPageProps) {
   const [employees, setEmployees] = useEmployees();
 
   const handleDelete = (id: string) => {
-    setEmployees((prev) => prev.filter((e) => e.id !== id));
+    const newEmployees = employees.filter((e) => e.id !== id);
+    try {
+      window.localStorage.setItem(
+        "jmda_employees",
+        JSON.stringify(newEmployees),
+      );
+    } catch {}
+    setEmployees(newEmployees);
     toast.success("Employee deleted.");
   };
 
